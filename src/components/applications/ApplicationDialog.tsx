@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DefaultStages, defaultStageLabels, type Application, type CustomStage } from '@/db/schema'
 import { useDuplicateDetection } from '@/hooks/useDuplicateDetection'
-import { fetchUrlMetadata } from '@/lib/urlMetadata'
+import { fetchUrlMetadata, type UrlMetadata } from '@/lib/urlMetadata'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +32,9 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
   const [salary, setSalary] = useState('')
   const [importingUrl, setImportingUrl] = useState(false)
   const [importError, setImportError] = useState(false)
+  const [importedMeta, setImportedMeta] = useState<UrlMetadata | null>(null)
+  const [logoError, setLogoError] = useState(false)
+  const [imageError, setImageError] = useState(false)
 
   const duplicate = useDuplicateDetection(
     allApplications,
@@ -67,32 +70,41 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
       setLocation('')
       setSalary('')
     }
+    setImportError(false)
+    setImportedMeta(null)
+    setLogoError(false)
+    setImageError(false)
   }, [initialData, open])
 
   const handleImportUrl = useCallback(async () => {
     if (!url.trim()) return
     setImportError(false)
+    setImportedMeta(null)
+    setLogoError(false)
+    setImageError(false)
     setImportingUrl(true)
     try {
       const result = await fetchUrlMetadata(url.trim())
-      if (!result.success || (!result.data.title && !result.data.siteName)) {
+      if (!result.success) {
         setImportError(true)
         return
       }
       const meta = result.data
+      setImportedMeta(meta)
+
+      const companyVal = meta.company ?? meta.siteName
+      if (companyVal && !company) setCompany(companyVal)
+
       if (meta.title && !role) {
         setRole(meta.title.replace(/ - .*| \| .*| – .*/g, '').trim())
       }
-      if (meta.siteName && !company) {
-        setCompany(meta.siteName)
-      }
-      if (meta.description && !notes) {
-        setNotes(meta.description)
-      }
+
+      if (meta.location && !location) setLocation(meta.location)
+      if (meta.salary && !salary) setSalary(meta.salary)
     } finally {
       setImportingUrl(false)
     }
-  }, [url, role, company, notes])
+  }, [url, role, company, location, salary])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -174,6 +186,26 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                   {t('application.importError')}
                 </p>
+              )}
+              {importedMeta && (
+                <div className="flex gap-2 mt-2">
+                  {importedMeta.companyLogo && !logoError && (
+                    <img
+                      src={importedMeta.companyLogo}
+                      alt=""
+                      className="h-8 w-8 rounded object-contain border"
+                      onError={() => setLogoError(true)}
+                    />
+                  )}
+                  {importedMeta.image && !imageError && (
+                    <img
+                      src={importedMeta.image}
+                      alt=""
+                      className="h-8 w-16 rounded object-cover border"
+                      onError={() => setImageError(true)}
+                    />
+                  )}
+                </div>
               )}
             </div>
             <div className="space-y-2">
