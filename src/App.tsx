@@ -13,10 +13,11 @@ import { Input } from '@/components/ui/input'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import { exportToJson, exportToCsv, downloadFile } from '@/lib/export'
 import type { Application } from '@/db/schema'
 
 function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { data: applications = [], isLoading } = useApplications()
   const { data: customStages = [] } = useCustomStages()
   const createMutation = useCreateApplication()
@@ -28,6 +29,7 @@ function App() {
   const staleApps = useStaleApplications(applications)
   const ghostedApps = useGhostedApplications(applications)
   const reposted = useRepostedOffers(applications)
+  const lang: 'en' | 'pl' = i18n.language === 'pl' ? 'pl' : 'en'
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingApp, setEditingApp] = useState<Application | null>(null)
@@ -63,6 +65,16 @@ function App() {
     if (!newStageName.trim()) return
     addStageMutation.mutate({ name: newStageName.trim() })
     setNewStageName('')
+  }
+
+  function handleExportJson() {
+    const json = exportToJson(applications, customStages)
+    downloadFile(json, 'apply-log-plus-export.json', 'application/json')
+  }
+
+  function handleExportCsv() {
+    const csv = exportToCsv(applications, lang)
+    downloadFile(csv, 'apply-log-plus-export.csv', 'text/csv')
   }
 
   return (
@@ -111,12 +123,22 @@ function App() {
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Loading...</div>
         ) : (
-          <ApplicationTable
-            applications={applications}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            customStages={customStages}
-          />
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportJson}>
+                {t('application.exportJson')}
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportCsv}>
+                {t('application.exportCsv')}
+              </Button>
+            </div>
+            <ApplicationTable
+              applications={applications}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              customStages={customStages}
+            />
+          </div>
         )}
       </main>
 

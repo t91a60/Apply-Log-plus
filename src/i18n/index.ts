@@ -32,6 +32,8 @@ const resources = {
         repostedWarning: 'Found {{count}} job postings that may be reposted (same company + role appears multiple times).',
         staleWarning: '{{count}} application(s) have not been updated in over 14 days.',
         ghostedWarning: '{{count}} application(s) have not heard back in over 30 days. Consider marking as Ghosted.',
+        exportJson: 'Export JSON',
+        exportCsv: 'Export CSV',
       },
       stage: {
         Applied: 'Applied',
@@ -48,6 +50,11 @@ const resources = {
         total: 'Total',
         active: 'Active',
         rejected: 'Rejected',
+        offers: 'Offers',
+        accepted: 'Accepted',
+        monthlyTrend: 'Monthly Trend',
+        avgResponse: 'Avg. Response Time',
+        days: 'days',
       },
       sync: {
         title: 'Sync',
@@ -107,6 +114,8 @@ const resources = {
         repostedWarning: 'Znaleziono {{count}} ofert, które mogą być ponownie wystawione (ta sama firma + stanowisko pojawia się wielokrotnie).',
         staleWarning: '{{count}} aplikacji nie było aktualizowanych od ponad 14 dni.',
         ghostedWarning: '{{count}} aplikacji nie otrzymało odpowiedzi od ponad 30 dni. Rozważ oznaczenie jako Ghosted.',
+        exportJson: 'Eksportuj JSON',
+        exportCsv: 'Eksportuj CSV',
       },
       stage: {
         Applied: 'Aplikowano',
@@ -123,6 +132,11 @@ const resources = {
         total: 'Wszystkie',
         active: 'Aktywne',
         rejected: 'Odrzucone',
+        offers: 'Oferty',
+        accepted: 'Przyjęte',
+        monthlyTrend: 'Trend miesięczny',
+        avgResponse: 'Śr. czas odpowiedzi',
+        days: 'dni',
       },
       sync: {
         title: 'Synchronizacja',

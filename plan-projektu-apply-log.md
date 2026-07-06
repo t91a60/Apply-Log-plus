@@ -146,4 +146,4 @@ jobs:
 
 **Faza 5 — hosting:** konfiguracja GitHub Pages, workflow Actions, publiczny deploy. ✅ ukończono
 
-**Faza 6 — polish:** rozszerzone statystyki, eksport JSON/CSV, testy i lint dociągnięte do pełnego pokrycia krytycznych ścieżek.
+**Faza 6 — polish:** rozszerzone statystyki, eksport JSON/CSV, testy i lint dociągnięte do pełnego pokrycia krytycznych ścieżek. ✅ ukończono
