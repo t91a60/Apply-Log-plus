@@ -145,10 +145,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
 
         {tab === 'config' && (
           <form onSubmit={e => e.preventDefault()} className="space-y-4">
-<<<<<<< Updated upstream
-=======
             <input type="text" name="username" autoComplete="username" className="hidden" aria-hidden="true" tabIndex={-1} />
->>>>>>> Stashed changes
             <div className="space-y-2">
               <label htmlFor="sync-token" className="text-sm font-medium">GitHub Personal Access Token</label>
               <Input
