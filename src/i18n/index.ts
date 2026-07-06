@@ -27,6 +27,11 @@ const resources = {
         timeline: 'Timeline',
         manageStages: 'Manage Stages',
         newStagePlaceholder: 'New stage name...',
+        importMeta: 'Import',
+        duplicateWarning: 'This company and role already exist in your list ({{company}} — {{role}}).',
+        repostedWarning: 'Found {{count}} job postings that may be reposted (same company + role appears multiple times).',
+        staleWarning: '{{count}} application(s) have not been updated in over 14 days.',
+        ghostedWarning: '{{count}} application(s) have not heard back in over 30 days. Consider marking as Ghosted.',
       },
       stage: {
         Applied: 'Applied',
@@ -97,6 +102,11 @@ const resources = {
         timeline: 'Historia',
         manageStages: 'Zarządzaj etapami',
         newStagePlaceholder: 'Nazwa nowego etapu...',
+        importMeta: 'Importuj',
+        duplicateWarning: 'Ta firma i stanowisko już istnieją na liście ({{company}} — {{role}}).',
+        repostedWarning: 'Znaleziono {{count}} ofert, które mogą być ponownie wystawione (ta sama firma + stanowisko pojawia się wielokrotnie).',
+        staleWarning: '{{count}} aplikacji nie było aktualizowanych od ponad 14 dni.',
+        ghostedWarning: '{{count}} aplikacji nie otrzymało odpowiedzi od ponad 30 dni. Rozważ oznaczenie jako Ghosted.',
       },
       stage: {
         Applied: 'Aplikowano',

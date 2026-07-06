@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DefaultStages, defaultStageLabels, type Application, type CustomStage } from '@/db/schema'
+import { useDuplicateDetection } from '@/hooks/useDuplicateDetection'
+import { fetchUrlMetadata } from '@/lib/urlMetadata'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,9 +15,10 @@ interface Props {
   onSubmit: (data: Partial<Application>) => void
   initialData?: Application | null
   customStages?: CustomStage[]
+  allApplications?: Application[]
 }
 
-export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, customStages = [] }: Props) {
+export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, customStages = [], allApplications = [] }: Props) {
   const { t, i18n } = useTranslation()
   const isEditing = !!initialData
   const lang: 'en' | 'pl' = i18n.language === 'pl' ? 'pl' : 'en'
@@ -27,6 +30,14 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
   const [notes, setNotes] = useState('')
   const [location, setLocation] = useState('')
   const [salary, setSalary] = useState('')
+  const [importingUrl, setImportingUrl] = useState(false)
+
+  const duplicate = useDuplicateDetection(
+    allApplications,
+    company,
+    role,
+    initialData?.id,
+  )
 
   const allStages = [...DefaultStages, ...customStages.map(s => s.name)]
 
@@ -56,6 +67,25 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
       setSalary('')
     }
   }, [initialData, open])
+
+  const handleImportUrl = useCallback(async () => {
+    if (!url.trim()) return
+    setImportingUrl(true)
+    try {
+      const meta = await fetchUrlMetadata(url.trim())
+      if (meta.title && !role) {
+        setRole(meta.title.replace(/ - .*| \| .*| – .*/g, '').trim())
+      }
+      if (meta.siteName && !company) {
+        setCompany(meta.siteName)
+      }
+      if (meta.description && !notes) {
+        setNotes(meta.description)
+      }
+    } finally {
+      setImportingUrl(false)
+    }
+  }, [url, role, company, notes])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -102,6 +132,12 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
           <DialogTitle>{isEditing ? t('application.edit') : t('application.add')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {duplicate && !isEditing && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+              {t('application.duplicateWarning', { company: duplicate.company, role: duplicate.role })}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('application.company')}</label>
@@ -115,7 +151,18 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('application.url')}</label>
-              <Input value={url} onChange={e => setUrl(e.target.value)} type="url" />
+              <div className="flex gap-2">
+                <Input value={url} onChange={e => setUrl(e.target.value)} type="url" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleImportUrl}
+                  disabled={importingUrl || !url.trim()}
+                >
+                  {importingUrl ? '...' : t('application.importMeta')}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('application.stage')}</label>

@@ -142,7 +142,7 @@ jobs:
 
 **Faza 3 — sync bezpieczny:** szyfrowanie E2E, Gist sync, parowanie urządzeń. ✅ ukończono
 
-**Faza 4 — inteligentne dodatki:** wykrywanie duplikatów/reposted ofert, przypomnienia o braku odpowiedzi, import metadanych z linku.
+**Faza 4 — inteligentne dodatki:** wykrywanie duplikatów/reposted ofert, przypomnienia o braku odpowiedzi, import metadanych z linku. ✅ ukończono
 
 **Faza 5 — hosting:** konfiguracja GitHub Pages, workflow Actions, publiczny deploy.
 

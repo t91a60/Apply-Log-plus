@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApplications, useCreateApplication, useUpdateApplication, useDeleteApplication } from '@/hooks/useApplications'
 import { useCustomStages, useAddCustomStage, useRemoveCustomStage } from '@/hooks/useCustomStages'
+import { useStaleApplications, useGhostedApplications } from '@/hooks/useStaleApplications'
+import { useRepostedOffers } from '@/hooks/useDuplicateDetection'
 import { ApplicationTable } from '@/components/applications/ApplicationTable'
 import { ApplicationDialog } from '@/components/applications/ApplicationDialog'
 import { StatsCards } from '@/components/applications/StatsCards'
@@ -22,6 +24,10 @@ function App() {
   const deleteMutation = useDeleteApplication()
   const addStageMutation = useAddCustomStage()
   const removeStageMutation = useRemoveCustomStage()
+
+  const staleApps = useStaleApplications(applications)
+  const ghostedApps = useGhostedApplications(applications)
+  const reposted = useRepostedOffers(applications)
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingApp, setEditingApp] = useState<Application | null>(null)
@@ -76,6 +82,30 @@ function App() {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+        {reposted.length > 0 && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 px-4 py-3">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+              {t('application.repostedWarning', { count: reposted.length })}
+            </p>
+          </div>
+        )}
+
+        {staleApps.length > 0 && (
+          <div className="rounded-md border border-orange-200 bg-orange-50 dark:bg-orange-950 dark:border-orange-800 px-4 py-3">
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              {t('application.staleWarning', { count: staleApps.length })}
+            </p>
+          </div>
+        )}
+
+        {ghostedApps.length > 0 && (
+          <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800 px-4 py-3">
+            <p className="text-sm font-medium text-red-800 dark:text-red-200">
+              {t('application.ghostedWarning', { count: ghostedApps.length })}
+            </p>
+          </div>
+        )}
+
         {applications.length > 0 && <StatsCards applications={applications} />}
 
         {isLoading ? (
@@ -96,6 +126,7 @@ function App() {
         onSubmit={handleSubmit}
         initialData={editingApp}
         customStages={customStages}
+        allApplications={applications}
       />
 
       <Dialog open={stageDialogOpen} onOpenChange={setStageDialogOpen}>
