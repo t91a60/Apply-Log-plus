@@ -144,7 +144,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
         </div>
 
         {tab === 'config' && (
-          <div className="space-y-4">
+          <form onSubmit={e => e.preventDefault()} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="sync-token" className="text-sm font-medium">GitHub Personal Access Token</label>
               <Input
@@ -235,7 +235,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
                 )}
               </div>
             )}
-          </div>
+          </form>
         )}
 
         {tab === 'pair' && (
