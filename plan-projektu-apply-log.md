@@ -144,6 +144,6 @@ jobs:
 
 **Faza 4 — inteligentne dodatki:** wykrywanie duplikatów/reposted ofert, przypomnienia o braku odpowiedzi, import metadanych z linku. ✅ ukończono
 
-**Faza 5 — hosting:** konfiguracja GitHub Pages, workflow Actions, publiczny deploy.
+**Faza 5 — hosting:** konfiguracja GitHub Pages, workflow Actions, publiczny deploy. ✅ ukończono
 
 **Faza 6 — polish:** rozszerzone statystyki, eksport JSON/CSV, testy i lint dociągnięte do pełnego pokrycia krytycznych ścieżek.
