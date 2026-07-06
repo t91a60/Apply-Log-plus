@@ -24,6 +24,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
   const [password, setPassword] = useState('')
   const [gistId, setGistId] = useState('')
   const [pairCode, setPairCode] = useState('')
+  const [showPairCode, setShowPairCode] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [isConfigured, setIsConfigured] = useState(false)
 
@@ -200,10 +201,23 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
                   {t('sync.generateCode')}
                 </Button>
                 {pairCode && (
-                  <div className="mt-2">
+                  <div className="mt-2 space-y-1">
                     <label className="text-xs text-muted-foreground">{t('sync.pairCode')}</label>
-                    <div className="p-2 rounded-md bg-muted text-xs break-all font-mono mt-1 select-all">
-                      {pairCode}
+                    <div className="flex gap-2">
+                      <Input
+                        type={showPairCode ? 'text' : 'password'}
+                        value={pairCode}
+                        readOnly
+                        className="text-xs font-mono flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPairCode(!showPairCode)}
+                      >
+                        {showPairCode ? t('sync.hide') : t('sync.show')}
+                      </Button>
                     </div>
                   </div>
                 )}
