@@ -138,7 +138,7 @@ jobs:
 
 **Faza 1 — fundament:** setup projektu, model danych w Dexie, CRUD aplikacji, tabela z filtrami/search. ✅ ukończono
 
-**Faza 2 — core UX:** custom stages, stats cards, i18n, timeline zmian statusu.
+**Faza 2 — core UX:** custom stages, stats cards, i18n, timeline zmian statusu. ✅ ukończono
 
 **Faza 3 — sync bezpieczny:** szyfrowanie E2E, Gist sync, parowanie urządzeń.
 

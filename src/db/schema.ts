@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const StageEnum = z.enum([
+export const DefaultStages = [
   'Applied',
   'Phone Screen',
   'Interview',
@@ -10,11 +10,14 @@ export const StageEnum = z.enum([
   'Ghosted',
   'Accepted',
   'Declined',
-])
+] as const
 
-export type Stage = z.infer<typeof StageEnum>
+export const StageEnum = z.enum(DefaultStages)
+export type DefaultStage = z.infer<typeof StageEnum>
 
-export const stageLabels: Record<Stage, { en: string; pl: string }> = {
+export type Stage = string
+
+export const defaultStageLabels: Record<DefaultStage, { en: string; pl: string }> = {
   Applied: { en: 'Applied', pl: 'Aplikowano' },
   'Phone Screen': { en: 'Phone Screen', pl: 'Rozmowa tel.' },
   Interview: { en: 'Interview', pl: 'Rozmowa' },
@@ -26,8 +29,16 @@ export const stageLabels: Record<Stage, { en: string; pl: string }> = {
   Declined: { en: 'Declined', pl: 'Odrzucono przez Ciebie' },
 }
 
+export const CustomStageSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'Stage name is required'),
+  color: z.string().default('bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700'),
+})
+
+export type CustomStage = z.infer<typeof CustomStageSchema>
+
 export const StageTimelineEntrySchema = z.object({
-  stage: StageEnum,
+  stage: z.string(),
   date: z.string(),
   note: z.string().optional(),
 })
@@ -41,7 +52,7 @@ export const ApplicationSchema = z.object({
   url: z.string().url().optional().or(z.literal('')),
   location: z.string().optional(),
   salary: z.string().optional(),
-  currentStage: StageEnum,
+  currentStage: z.string(),
   timeline: z.array(StageTimelineEntrySchema),
   notes: z.string().optional(),
   createdAt: z.string(),

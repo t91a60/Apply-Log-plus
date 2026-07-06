@@ -1,15 +1,25 @@
 import { describe, it, expect } from 'vitest'
-import { ApplicationSchema, StageEnum } from '@/db/schema'
+import { DefaultStages, CustomStageSchema, ApplicationSchema } from '@/db/schema'
 
-describe('StageEnum', () => {
-  it('accepts valid stages', () => {
-    expect(StageEnum.parse('Applied')).toBe('Applied')
-    expect(StageEnum.parse('Interview')).toBe('Interview')
-    expect(StageEnum.parse('Rejected')).toBe('Rejected')
+describe('DefaultStages', () => {
+  it('contains all expected stages', () => {
+    expect(DefaultStages).toContain('Applied')
+    expect(DefaultStages).toContain('Interview')
+    expect(DefaultStages).toContain('Offer')
+    expect(DefaultStages).toContain('Rejected')
+    expect(DefaultStages).toContain('Ghosted')
+  })
+})
+
+describe('CustomStageSchema', () => {
+  it('validates a custom stage', () => {
+    const result = CustomStageSchema.parse({ name: 'Screening Call' })
+    expect(result.name).toBe('Screening Call')
+    expect(result.color).toBeTruthy()
   })
 
-  it('rejects invalid stages', () => {
-    expect(() => StageEnum.parse('InvalidStage')).toThrow()
+  it('rejects empty name', () => {
+    expect(() => CustomStageSchema.parse({ name: '' })).toThrow()
   })
 })
 
@@ -53,6 +63,18 @@ describe('ApplicationSchema', () => {
     ).toThrow()
   })
 
+  it('accepts custom stage values', () => {
+    const result = ApplicationSchema.parse({
+      company: 'Test Corp',
+      role: 'Engineer',
+      currentStage: 'My Custom Stage',
+      timeline: [{ stage: 'My Custom Stage', date: '2024-01-01' }],
+      createdAt: '2024-01-01',
+      updatedAt: '2024-01-01',
+    })
+    expect(result.currentStage).toBe('My Custom Stage')
+  })
+
   it('accepts optional fields', () => {
     const result = ApplicationSchema.parse({
       company: 'Test Corp',
@@ -69,5 +91,6 @@ describe('ApplicationSchema', () => {
     expect(result.location).toBe('Remote')
     expect(result.salary).toBe('100k')
     expect(result.notes).toBe('Great company')
+    expect(result.timeline).toHaveLength(2)
   })
 })

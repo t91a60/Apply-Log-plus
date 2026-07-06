@@ -24,6 +24,9 @@ const resources = {
         search: 'Search company or role...',
         filterStage: 'Filter by stage',
         allStages: 'All stages',
+        timeline: 'Timeline',
+        manageStages: 'Manage Stages',
+        newStagePlaceholder: 'New stage name...',
       },
       stage: {
         Applied: 'Applied',
@@ -35,6 +38,11 @@ const resources = {
         Ghosted: 'Ghosted',
         Accepted: 'Accepted',
         Declined: 'Declined',
+      },
+      stats: {
+        total: 'Total',
+        active: 'Active',
+        rejected: 'Rejected',
       },
     },
   },
@@ -60,6 +68,9 @@ const resources = {
         search: 'Szukaj firmy lub stanowiska...',
         filterStage: 'Filtruj po etapie',
         allStages: 'Wszystkie etapy',
+        timeline: 'Historia',
+        manageStages: 'Zarządzaj etapami',
+        newStagePlaceholder: 'Nazwa nowego etapu...',
       },
       stage: {
         Applied: 'Aplikowano',
@@ -71,6 +82,11 @@ const resources = {
         Ghosted: 'Ghosted',
         Accepted: 'Przyjęto',
         Declined: 'Odrzucono przez Ciebie',
+      },
+      stats: {
+        total: 'Wszystkie',
+        active: 'Aktywne',
+        rejected: 'Odrzucone',
       },
     },
   },

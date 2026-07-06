@@ -1,22 +1,28 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Application, Stage } from '@/db/schema'
-import { StageEnum, stageLabels } from '@/db/schema'
+import type { Application } from '@/db/schema'
+import { DefaultStages, defaultStageLabels } from '@/db/schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { StageBadge } from './StageBadge'
+import { Timeline } from './Timeline'
+import type { CustomStage } from '@/db/schema'
 
 interface Props {
   applications: Application[]
   onEdit: (app: Application) => void
   onDelete: (id: string) => void
+  customStages?: CustomStage[]
 }
 
-export function ApplicationTable({ applications, onEdit, onDelete }: Props) {
+export function ApplicationTable({ applications, onEdit, onDelete, customStages = [] }: Props) {
   const { t, i18n } = useTranslation()
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const allStages = [...DefaultStages, ...customStages.map(s => s.name)]
 
   const filtered = useMemo(() => {
     return applications.filter(app => {
@@ -36,6 +42,18 @@ export function ApplicationTable({ applications, onEdit, onDelete }: Props) {
       day: 'numeric',
       year: 'numeric',
     })
+  }
+
+  function stageLabel(s: string) {
+    if (s in defaultStageLabels) {
+      return defaultStageLabels[s as keyof typeof defaultStageLabels][lang]
+    }
+    return s
+  }
+
+  function stageColor(s: string) {
+    const c = customStages.find(cs => cs.name === s)
+    return c?.color
   }
 
   if (applications.length === 0) {
@@ -63,9 +81,9 @@ export function ApplicationTable({ applications, onEdit, onDelete }: Props) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">{t('application.allStages')}</SelectItem>
-              {StageEnum.options.map(s => (
+              {allStages.map(s => (
                 <SelectItem key={s} value={s}>
-                  {stageLabels[s as Stage][lang]}
+                  {stageLabel(s)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -92,7 +110,8 @@ export function ApplicationTable({ applications, onEdit, onDelete }: Props) {
                 <td className="p-4">
                   <StageBadge
                     stage={app.currentStage}
-                    label={stageLabels[app.currentStage][lang]}
+                    label={stageLabel(app.currentStage)}
+                    customColor={stageColor(app.currentStage)}
                   />
                 </td>
                 <td className="p-4 text-sm text-muted-foreground">
@@ -100,6 +119,13 @@ export function ApplicationTable({ applications, onEdit, onDelete }: Props) {
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setExpandedId(expandedId === app.id ? null : app.id!)}
+                    >
+                      {expandedId === app.id ? 'Hide' : 'Timeline'}
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => onEdit(app)}>
                       {t('application.edit')}
                     </Button>
@@ -113,6 +139,16 @@ export function ApplicationTable({ applications, onEdit, onDelete }: Props) {
           </tbody>
         </table>
       </div>
+
+      {expandedId && (() => {
+        const app = applications.find(a => a.id === expandedId)
+        if (!app || app.timeline.length === 0) return null
+        return (
+          <div className="rounded-md border bg-muted/30 p-4">
+            <Timeline timeline={app.timeline} lang={lang} />
+          </div>
+        )
+      })()}
     </div>
   )
 }

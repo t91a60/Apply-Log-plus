@@ -1,29 +1,41 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StageEnum, stageLabels, type Application, type Stage } from '@/db/schema'
+import { DefaultStages, defaultStageLabels, type Application, type CustomStage } from '@/db/schema'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Timeline } from './Timeline'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (data: Partial<Application>) => void
   initialData?: Application | null
+  customStages?: CustomStage[]
 }
 
-export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData }: Props) {
-  const { t } = useTranslation()
+export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, customStages = [] }: Props) {
+  const { t, i18n } = useTranslation()
   const isEditing = !!initialData
+  const lang: 'en' | 'pl' = i18n.language === 'pl' ? 'pl' : 'en'
 
   const [company, setCompany] = useState('')
   const [role, setRole] = useState('')
   const [url, setUrl] = useState('')
-  const [stage, setStage] = useState<Stage>('Applied')
+  const [stage, setStage] = useState('Applied')
   const [notes, setNotes] = useState('')
   const [location, setLocation] = useState('')
   const [salary, setSalary] = useState('')
+
+  const allStages = [...DefaultStages, ...customStages.map(s => s.name)]
+
+  function stageLabel(s: string) {
+    if (s in defaultStageLabels) {
+      return defaultStageLabels[s as keyof typeof defaultStageLabels][lang]
+    }
+    return s
+  }
 
   useEffect(() => {
     if (initialData) {
@@ -65,6 +77,13 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData }:
       data.id = initialData.id
       data.createdAt = initialData.createdAt
       data.timeline = initialData.timeline
+
+      if (stage !== initialData.currentStage) {
+        data.timeline = [
+          ...initialData.timeline,
+          { stage, date: now },
+        ]
+      }
     }
 
     if (!isEditing) {
@@ -100,14 +119,14 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData }:
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('application.stage')}</label>
-              <Select value={stage} onValueChange={v => setStage(v as Stage)}>
+              <Select value={stage} onValueChange={setStage}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {StageEnum.options.map(s => (
+                  {allStages.map(s => (
                     <SelectItem key={s} value={s}>
-                      {stageLabels[s as Stage][t('app.title') === 'Apply Log+' ? 'en' : 'pl'] ?? s}
+                      {stageLabel(s)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -132,6 +151,11 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData }:
               onChange={e => setNotes(e.target.value)}
             />
           </div>
+
+          {isEditing && initialData && initialData.timeline.length > 0 && (
+            <Timeline timeline={initialData.timeline} lang={lang} />
+          )}
+
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('application.cancel')}
