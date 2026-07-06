@@ -6,7 +6,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  loadSyncConfig, saveSyncConfig, clearSyncConfig,
+  loadSyncStorage, saveSyncConfig, clearSyncConfig,
   pushToGist, pullFromGist,
 } from '@/sync/syncManager'
 import { generatePairingCode, decodePairingCode } from '@/sync/gist'
@@ -29,11 +29,13 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
 
   useEffect(() => {
     if (open) {
-      loadSyncConfig().then(config => {
-        if (config) {
-          setToken(config.token)
-          setPassword(config.password)
-          setGistId(config.gistId ?? '')
+      setPassword('')
+      setPairCode('')
+      setStatus(null)
+      loadSyncStorage().then(storage => {
+        if (storage) {
+          setToken(storage.token)
+          setGistId(storage.gistId ?? '')
           setIsConfigured(true)
         }
       })
@@ -41,10 +43,9 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
   }, [open])
 
   async function handleSave() {
-    if (!token.trim() || !password.trim()) return
+    if (!token.trim()) return
     await saveSyncConfig({
       token: token.trim(),
-      password: password.trim(),
       gistId: gistId.trim() || undefined,
     })
     setIsConfigured(true)
@@ -52,7 +53,10 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
   }
 
   async function handlePush() {
-    if (!password) return
+    if (!password) {
+      setStatus(t('sync.passwordRequired'))
+      return
+    }
     setStatus(t('sync.syncing'))
     try {
       await pushToGist(password)
@@ -64,7 +68,10 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
   }
 
   async function handlePull() {
-    if (!password) return
+    if (!password) {
+      setStatus(t('sync.passwordRequired'))
+      return
+    }
     setStatus(t('sync.syncing'))
     try {
       await pullFromGist(password)
@@ -85,6 +92,10 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
   }
 
   function handleGenerateCode() {
+    if (!password) {
+      setStatus(t('sync.passwordRequired'))
+      return
+    }
     const code = generatePairingCode({
       token,
       password,
@@ -99,7 +110,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
       setToken(config.token)
       setPassword(config.password)
       setGistId(config.gistId ?? '')
-      await saveSyncConfig(config)
+      await saveSyncConfig({ token: config.token, gistId: config.gistId })
       setIsConfigured(true)
       setStatus(t('sync.pairSuccess'))
     } catch {
@@ -152,6 +163,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
                 onChange={e => setPassword(e.target.value)}
                 placeholder={t('sync.passwordHint')}
               />
+              <p className="text-xs text-muted-foreground">{t('sync.passwordSessionHint')}</p>
             </div>
 
             <div className="space-y-2">
@@ -164,7 +176,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={!token || !password}>
+              <Button onClick={handleSave} disabled={!token.trim()}>
                 {t('sync.saveConfig')}
               </Button>
               {isConfigured && (

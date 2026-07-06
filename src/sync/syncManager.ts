@@ -1,8 +1,13 @@
 import { db } from '@/db/database'
 import { encrypt, decrypt } from './encryption'
-import { createGist, updateGist, readGist, type SyncConfig } from './gist'
+import { createGist, updateGist, readGist } from './gist'
 
 const SYNC_CONFIG_KEY = 'syncConfig'
+
+export interface SyncStorage {
+  token: string
+  gistId?: string
+}
 
 export interface SyncMeta {
   lastSyncedAt: string | null
@@ -14,41 +19,34 @@ async function setSyncMeta(meta: SyncMeta): Promise<void> {
   await db.table('meta').put({ key: SYNC_CONFIG_KEY, value: JSON.stringify(meta) }, SYNC_CONFIG_KEY)
 }
 
-export async function saveSyncConfig(config: SyncConfig): Promise<void> {
+export async function saveSyncConfig(storage: SyncStorage): Promise<void> {
   await db.table('meta').put({
     key: 'syncToken',
-    value: config.token,
+    value: storage.token,
   }, 'syncToken')
 
-  if (config.gistId) {
+  if (storage.gistId) {
     await db.table('meta').put({
       key: 'gistId',
-      value: config.gistId,
+      value: storage.gistId,
     }, 'gistId')
   }
 
-  await db.table('meta').put({
-    key: 'syncPassword',
-    value: config.password,
-  }, 'syncPassword')
-
   await setSyncMeta({
     lastSyncedAt: null,
-    gistId: config.gistId ?? null,
-    token: config.token,
+    gistId: storage.gistId ?? null,
+    token: storage.token,
   })
 }
 
-export async function loadSyncConfig(): Promise<SyncConfig | null> {
+export async function loadSyncStorage(): Promise<SyncStorage | null> {
   try {
-    const token = await db.table('meta').get('syncToken') as { value: string } | undefined
-    const gistId = await db.table('meta').get('gistId') as { value: string } | undefined
-    const password = await db.table('meta').get('syncPassword') as { value: string } | undefined
-    if (!token || !password) return null
+    const tokenEntry = await db.table('meta').get('syncToken') as { value: string } | undefined
+    if (!tokenEntry) return null
+    const gistEntry = await db.table('meta').get('gistId') as { value: string } | undefined
     return {
-      token: token.value,
-      gistId: gistId?.value,
-      password: password.value,
+      token: tokenEntry.value,
+      gistId: gistEntry?.value,
     }
   } catch {
     return null
@@ -56,12 +54,12 @@ export async function loadSyncConfig(): Promise<SyncConfig | null> {
 }
 
 export async function clearSyncConfig(): Promise<void> {
-  await db.table('meta').bulkDelete(['syncToken', 'gistId', 'syncPassword', SYNC_CONFIG_KEY])
+  await db.table('meta').bulkDelete(['syncToken', 'gistId', SYNC_CONFIG_KEY])
 }
 
 export async function pushToGist(password: string): Promise<void> {
-  const config = await loadSyncConfig()
-  if (!config?.token) throw new Error('Sync not configured')
+  const storage = await loadSyncStorage()
+  if (!storage?.token) throw new Error('Sync not configured')
 
   const applications = await db.applications.toArray()
   const customStages = await db.customStages.toArray()
@@ -69,25 +67,29 @@ export async function pushToGist(password: string): Promise<void> {
   const payload = JSON.stringify({ applications, customStages })
   const encrypted = await encrypt(payload, password)
 
-  if (config.gistId) {
-    await updateGist(config.token, config.gistId, [
+  if (storage.gistId) {
+    await updateGist(storage.token, storage.gistId, [
       { filename: 'apply-log-plus-data.json', content: encrypted },
     ])
   } else {
-    const gistId = await createGist(config.token, [
+    const gistId = await createGist(storage.token, [
       { filename: 'apply-log-plus-data.json', content: encrypted },
     ])
     await db.table('meta').put({ key: 'gistId', value: gistId }, 'gistId')
   }
 
-  await setSyncMeta({ lastSyncedAt: new Date().toISOString(), gistId: config.gistId ?? null, token: config.token })
+  await setSyncMeta({
+    lastSyncedAt: new Date().toISOString(),
+    gistId: storage.gistId ?? null,
+    token: storage.token,
+  })
 }
 
 export async function pullFromGist(password: string): Promise<void> {
-  const config = await loadSyncConfig()
-  if (!config?.token || !config.gistId) throw new Error('Sync not configured')
+  const storage = await loadSyncStorage()
+  if (!storage?.token || !storage.gistId) throw new Error('Sync not configured')
 
-  const files = await readGist(config.token, config.gistId)
+  const files = await readGist(storage.token, storage.gistId)
   const encrypted = files['apply-log-plus-data.json']
   if (!encrypted) throw new Error('No sync data found in Gist')
 
@@ -104,5 +106,9 @@ export async function pullFromGist(password: string): Promise<void> {
     await db.customStages.bulkAdd(data.customStages)
   }
 
-  await setSyncMeta({ lastSyncedAt: new Date().toISOString(), gistId: config.gistId, token: config.token })
+  await setSyncMeta({
+    lastSyncedAt: new Date().toISOString(),
+    gistId: storage.gistId,
+    token: storage.token,
+  })
 }
