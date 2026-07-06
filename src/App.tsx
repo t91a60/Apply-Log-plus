@@ -161,6 +161,7 @@ function App() {
               <Input
                 id="new-stage-name"
                 name="new-stage-name"
+                autoComplete="off"
                 value={newStageName}
                 onChange={e => setNewStageName(e.target.value)}
                 placeholder={t('application.newStagePlaceholder')}

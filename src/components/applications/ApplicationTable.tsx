@@ -71,6 +71,7 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
           <Input
             id="search-applications"
             name="search"
+            autoComplete="off"
             placeholder={t('application.search')}
             value={search}
             onChange={e => setSearch(e.target.value)}

@@ -150,6 +150,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
               <Input
                 id="sync-token"
                 name="sync-token"
+                autoComplete="off"
                 type="password"
                 value={token}
                 onChange={e => setToken(e.target.value)}
@@ -163,6 +164,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
               <Input
                 id="sync-password"
                 name="sync-password"
+                autoComplete="new-password"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -176,6 +178,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
               <Input
                 id="sync-gist-id"
                 name="sync-gist-id"
+                autoComplete="off"
                 value={gistId}
                 onChange={e => setGistId(e.target.value)}
                 placeholder={t('sync.gistHint')}
@@ -213,6 +216,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
                       <Input
                         id="sync-pair-code"
                         name="sync-pair-code"
+                        autoComplete="off"
                         type={showPairCode ? 'text' : 'password'}
                         value={pairCode}
                         readOnly
@@ -241,6 +245,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
               <textarea
                 id="sync-enter-code"
                 name="sync-enter-code"
+                autoComplete="off"
                 className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 value={pairCode}
                 onChange={e => setPairCode(e.target.value)}
