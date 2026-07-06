@@ -140,7 +140,7 @@ jobs:
 
 **Faza 2 — core UX:** custom stages, stats cards, i18n, timeline zmian statusu. ✅ ukończono
 
-**Faza 3 — sync bezpieczny:** szyfrowanie E2E, Gist sync, parowanie urządzeń.
+**Faza 3 — sync bezpieczny:** szyfrowanie E2E, Gist sync, parowanie urządzeń. ✅ ukończono
 
 **Faza 4 — inteligentne dodatki:** wykrywanie duplikatów/reposted ofert, przypomnienia o braku odpowiedzi, import metadanych z linku.
 

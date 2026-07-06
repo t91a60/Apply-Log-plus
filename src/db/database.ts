@@ -7,9 +7,10 @@ const db = new Dexie('ApplyLogPlus') as Dexie & {
   customStages: EntityTable<CustomStage, 'id'>
 }
 
-db.version(2).stores({
+db.version(3).stores({
   applications: '++id, company, role, currentStage, createdAt, updatedAt',
   customStages: '++id, name',
+  meta: 'key',
 })
 
 export { db }

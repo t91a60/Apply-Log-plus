@@ -5,6 +5,7 @@ import { useCustomStages, useAddCustomStage, useRemoveCustomStage } from '@/hook
 import { ApplicationTable } from '@/components/applications/ApplicationTable'
 import { ApplicationDialog } from '@/components/applications/ApplicationDialog'
 import { StatsCards } from '@/components/applications/StatsCards'
+import { SyncPanel } from '@/components/sync/SyncPanel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -26,6 +27,7 @@ function App() {
   const [editingApp, setEditingApp] = useState<Application | null>(null)
   const [stageDialogOpen, setStageDialogOpen] = useState(false)
   const [newStageName, setNewStageName] = useState('')
+  const [syncPanelOpen, setSyncPanelOpen] = useState(false)
 
   function handleAdd() {
     setEditingApp(null)
@@ -63,6 +65,9 @@ function App() {
         <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold tracking-tight">{t('app.title')}</h1>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setSyncPanelOpen(true)}>
+              {t('sync.title')}
+            </Button>
             <Button variant="outline" onClick={() => setStageDialogOpen(true)}>
               {t('application.manageStages')}
             </Button>
@@ -127,6 +132,12 @@ function App() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <SyncPanel
+        open={syncPanelOpen}
+        onOpenChange={setSyncPanelOpen}
+        onSyncComplete={() => {}}
+      />
     </div>
   )
 }
