@@ -4,7 +4,12 @@ export interface UrlMetadata {
   siteName: string | null
 }
 
-export async function fetchUrlMetadata(url: string): Promise<UrlMetadata> {
+export interface UrlMetadataResult {
+  success: boolean
+  data: UrlMetadata
+}
+
+export async function fetchUrlMetadata(url: string): Promise<UrlMetadataResult> {
   try {
     const response = await fetch(url, {
       mode: 'cors',
@@ -12,7 +17,7 @@ export async function fetchUrlMetadata(url: string): Promise<UrlMetadata> {
     })
 
     if (!response.ok) {
-      return { title: null, description: null, siteName: null }
+      return { success: false, data: { title: null, description: null, siteName: null } }
     }
 
     const html = await response.text()
@@ -29,13 +34,15 @@ export async function fetchUrlMetadata(url: string): Promise<UrlMetadata> {
     const siteName = getMetaContent(doc, 'og:site_name')
       ?? null
 
-    return {
+    const data: UrlMetadata = {
       title: title?.trim() ?? null,
       description: description?.trim() ?? null,
       siteName: siteName?.trim() ?? null,
     }
+
+    return { success: true, data }
   } catch {
-    return { title: null, description: null, siteName: null }
+    return { success: false, data: { title: null, description: null, siteName: null } }
   }
 }
 

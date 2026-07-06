@@ -31,6 +31,7 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
   const [location, setLocation] = useState('')
   const [salary, setSalary] = useState('')
   const [importingUrl, setImportingUrl] = useState(false)
+  const [importError, setImportError] = useState(false)
 
   const duplicate = useDuplicateDetection(
     allApplications,
@@ -70,9 +71,15 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
 
   const handleImportUrl = useCallback(async () => {
     if (!url.trim()) return
+    setImportError(false)
     setImportingUrl(true)
     try {
-      const meta = await fetchUrlMetadata(url.trim())
+      const result = await fetchUrlMetadata(url.trim())
+      if (!result.success || (!result.data.title && !result.data.siteName)) {
+        setImportError(true)
+        return
+      }
+      const meta = result.data
       if (meta.title && !role) {
         setRole(meta.title.replace(/ - .*| \| .*| – .*/g, '').trim())
       }
@@ -163,6 +170,11 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
                   {importingUrl ? '...' : t('application.importMeta')}
                 </Button>
               </div>
+              {importError && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  {t('application.importError')}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('application.stage')}</label>
