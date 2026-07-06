@@ -69,6 +69,8 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
       <div className="flex gap-4">
         <div className="flex-1">
           <Input
+            id="search-applications"
+            name="search"
             placeholder={t('application.search')}
             value={search}
             onChange={e => setSearch(e.target.value)}

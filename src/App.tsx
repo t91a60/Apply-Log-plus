@@ -159,6 +159,8 @@ function App() {
           <div className="space-y-4">
             <div className="flex gap-2">
               <Input
+                id="new-stage-name"
+                name="new-stage-name"
                 value={newStageName}
                 onChange={e => setNewStageName(e.target.value)}
                 placeholder={t('application.newStagePlaceholder')}

@@ -9,10 +9,12 @@ export interface UrlMetadataResult {
   data: UrlMetadata
 }
 
+const CORS_PROXY = 'https://api.allorigins.win/raw?url='
+
 export async function fetchUrlMetadata(url: string): Promise<UrlMetadataResult> {
   try {
-    const response = await fetch(url, {
-      mode: 'cors',
+    const proxyUrl = CORS_PROXY + encodeURIComponent(url)
+    const response = await fetch(proxyUrl, {
       headers: { 'User-Agent': 'ApplyLogPlus/1.0' },
     })
 

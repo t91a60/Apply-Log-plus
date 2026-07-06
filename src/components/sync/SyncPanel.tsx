@@ -146,8 +146,10 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
         {tab === 'config' && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">GitHub Personal Access Token</label>
+              <label htmlFor="sync-token" className="text-sm font-medium">GitHub Personal Access Token</label>
               <Input
+                id="sync-token"
+                name="sync-token"
                 type="password"
                 value={token}
                 onChange={e => setToken(e.target.value)}
@@ -157,8 +159,10 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('sync.password')}</label>
+              <label htmlFor="sync-password" className="text-sm font-medium">{t('sync.password')}</label>
               <Input
+                id="sync-password"
+                name="sync-password"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -168,8 +172,10 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Gist ID ({t('sync.optional')})</label>
+              <label htmlFor="sync-gist-id" className="text-sm font-medium">Gist ID ({t('sync.optional')})</label>
               <Input
+                id="sync-gist-id"
+                name="sync-gist-id"
                 value={gistId}
                 onChange={e => setGistId(e.target.value)}
                 placeholder={t('sync.gistHint')}
@@ -202,9 +208,11 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
                 </Button>
                 {pairCode && (
                   <div className="mt-2 space-y-1">
-                    <label className="text-xs text-muted-foreground">{t('sync.pairCode')}</label>
+                    <label htmlFor="sync-pair-code" className="text-xs text-muted-foreground">{t('sync.pairCode')}</label>
                     <div className="flex gap-2">
                       <Input
+                        id="sync-pair-code"
+                        name="sync-pair-code"
                         type={showPairCode ? 'text' : 'password'}
                         value={pairCode}
                         readOnly
@@ -229,8 +237,10 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
         {tab === 'pair' && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('sync.enterCode')}</label>
+              <label htmlFor="sync-enter-code" className="text-sm font-medium">{t('sync.enterCode')}</label>
               <textarea
+                id="sync-enter-code"
+                name="sync-enter-code"
                 className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 value={pairCode}
                 onChange={e => setPairCode(e.target.value)}

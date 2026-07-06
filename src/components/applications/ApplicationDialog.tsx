@@ -147,19 +147,19 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('application.company')}</label>
-              <Input value={company} onChange={e => setCompany(e.target.value)} required />
+              <label htmlFor="add-company" className="text-sm font-medium">{t('application.company')}</label>
+              <Input id="add-company" name="company" value={company} onChange={e => setCompany(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('application.role')}</label>
-              <Input value={role} onChange={e => setRole(e.target.value)} required />
+              <label htmlFor="add-role" className="text-sm font-medium">{t('application.role')}</label>
+              <Input id="add-role" name="role" value={role} onChange={e => setRole(e.target.value)} required />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('application.url')}</label>
+              <label htmlFor="add-url" className="text-sm font-medium">{t('application.url')}</label>
               <div className="flex gap-2">
-                <Input value={url} onChange={e => setUrl(e.target.value)} type="url" />
+                <Input id="add-url" name="url" value={url} onChange={e => setUrl(e.target.value)} type="url" />
                 <Button
                   type="button"
                   variant="outline"
@@ -177,9 +177,9 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('application.stage')}</label>
+              <label htmlFor="add-stage" className="text-sm font-medium">{t('application.stage')}</label>
               <Select value={stage} onValueChange={setStage}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="add-stage" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -194,17 +194,19 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('application.location')}</label>
-              <Input value={location} onChange={e => setLocation(e.target.value)} />
+              <label htmlFor="add-location" className="text-sm font-medium">{t('application.location')}</label>
+              <Input id="add-location" name="location" value={location} onChange={e => setLocation(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('application.salary')}</label>
-              <Input value={salary} onChange={e => setSalary(e.target.value)} />
+              <label htmlFor="add-salary" className="text-sm font-medium">{t('application.salary')}</label>
+              <Input id="add-salary" name="salary" value={salary} onChange={e => setSalary(e.target.value)} />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t('application.notes')}</label>
+            <label htmlFor="add-notes" className="text-sm font-medium">{t('application.notes')}</label>
             <textarea
+              id="add-notes"
+              name="notes"
               className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               value={notes}
               onChange={e => setNotes(e.target.value)}
