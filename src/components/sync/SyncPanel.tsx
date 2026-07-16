@@ -33,7 +33,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
       setPassword('')
       setPairCode('')
       setStatus(null)
-      loadSyncStorage().then(storage => {
+      void loadSyncStorage().then(storage => {
         if (storage) {
           setToken(storage.token)
           setGistId(storage.gistId ?? '')

@@ -34,7 +34,7 @@ export function useAddCustomStage() {
   return useMutation({
     mutationFn: addCustomStage,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CUSTOM_STAGES_KEY })
+      void queryClient.invalidateQueries({ queryKey: CUSTOM_STAGES_KEY })
     },
   })
 }
@@ -44,7 +44,7 @@ export function useRemoveCustomStage() {
   return useMutation({
     mutationFn: removeCustomStage,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CUSTOM_STAGES_KEY })
+      void queryClient.invalidateQueries({ queryKey: CUSTOM_STAGES_KEY })
     },
   })
 }

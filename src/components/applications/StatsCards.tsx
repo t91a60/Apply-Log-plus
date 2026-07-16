@@ -40,8 +40,8 @@ export function StatsCards({ applications }: Props) {
     const responseTimes = applications
       .filter(a => a.timeline.length >= 2)
       .map(a => {
-        const first = new Date(a.timeline[0].date).getTime()
-        const last = new Date(a.timeline[a.timeline.length - 1].date).getTime()
+        const first = new Date(a.timeline[0]!.date).getTime()
+        const last = new Date(a.timeline[a.timeline.length - 1]!.date).getTime()
         return (last - first) / (1000 * 60 * 60 * 24)
       })
 

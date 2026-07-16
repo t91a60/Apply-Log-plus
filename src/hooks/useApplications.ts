@@ -57,7 +57,7 @@ export function useCreateApplication() {
   return useMutation({
     mutationFn: createApplication,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY })
+      void queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY })
     },
   })
 }
@@ -67,7 +67,7 @@ export function useUpdateApplication() {
   return useMutation({
     mutationFn: updateApplication,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY })
+      void queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY })
     },
   })
 }
@@ -77,7 +77,7 @@ export function useDeleteApplication() {
   return useMutation({
     mutationFn: deleteApplication,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY })
+      void queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY })
     },
   })
 }

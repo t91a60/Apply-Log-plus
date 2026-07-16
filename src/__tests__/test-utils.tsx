@@ -96,7 +96,7 @@ const resources = {
 }
 
 const testI18n = i18n.createInstance()
-testI18n.use(initReactI18next).init({
+void testI18n.use(initReactI18next).init({
   resources,
   lng: 'en',
   fallbackLng: 'en',
