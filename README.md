@@ -1,13 +1,13 @@
 # Apply Log+
 
-[![CI](https://github.com/t91a60/Apply-Log-plus/actions/workflows/ci.yml/badge.svg)](https://github.com/t91a60/Apply-Log-plus/actions/workflows/ci.yml)
+[![CI](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml/badge.svg)](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Offline-first job application tracker with end-to-end encryption.**
 
 Track your job applications across devices — without anyone else seeing your data. All data stays in your browser (IndexedDB); sync between devices uses encrypted GitHub Gists with a password only you know.
 
-> **🇵🇱 Wersja polska:** [README.pl.md](README.pl.md)
+> [Try the live app](https://t91a60.github.io/Apply-Log-plus/) · [🇵🇱 Wersja polska](README.pl.md) · [Security notes](SECURITY.md)
 
 ---
 
@@ -52,8 +52,8 @@ Track your job applications across devices — without anyone else seeing your d
 git clone https://github.com/t91a60/Apply-Log-plus.git
 cd Apply-Log-plus
 
-# install
-pnpm install
+# install exactly as locked
+pnpm install --frozen-lockfile
 
 # dev server
 pnpm dev
@@ -82,7 +82,7 @@ Sync uses GitHub Gists as a transport layer. Your data is **encrypted before it 
 4. Push your data to a private Gist
 5. On another device, enter the same token + password and pull
 
-For same-network setup, use the **Pairing Code** — a one-time code that bundles your config (still encrypted, but transmitted in plain text — only share directly between your own devices).
+For same-network setup, use the **Pairing Code** — a one-time code that bundles the GitHub token and Gist ID in base64. It is **not encrypted**: never send it through chat, email, screenshots, or a public issue. Share it only directly between devices you control.
 
 > ⚠️ The encryption password is **never saved** in the app or on GitHub. If you lose it, your synced data cannot be recovered.
 

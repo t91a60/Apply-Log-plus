@@ -1,13 +1,13 @@
 # Apply Log+
 
-[![CI](https://github.com/t91a60/Apply-Log-plus/actions/workflows/ci.yml/badge.svg)](https://github.com/t91a60/Apply-Log-plus/actions/workflows/ci.yml)
+[![CI](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml/badge.svg)](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Offline-first tracker aplikacji o pracę z szyfrowaniem end-to-end.**
 
 Śledź swoje aplikacje o pracę na wielu urządzeniach — bez udostępniania danych komukolwiek. Dane pozostają w Twojej przeglądarce (IndexedDB); synchronizacja między urządzeniami wykorzystuje zaszyfrowane GitHub Gisty z hasłem, które znasz tylko Ty.
 
-> **🇬🇧 English version:** [README.md](README.md)
+> [Otwórz działającą aplikację](https://t91a60.github.io/Apply-Log-plus/) · [🇬🇧 English version](README.md) · [Uwagi bezpieczeństwa](SECURITY.md)
 
 ---
 
@@ -50,7 +50,7 @@
 ```bash
 git clone https://github.com/t91a60/Apply-Log-plus.git
 cd Apply-Log-plus
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
@@ -71,7 +71,7 @@ Sync wykorzystuje GitHub Gist jako warstwę transportową. Dane są **szyfrowane
 4. Wyślij dane do prywatnego Gista
 5. Na drugim urządzeniu wpisz ten sam token + hasło i pobierz
 
-Do szybkiego parowania w tej samej sieci użyj **kodu parowania**.
+Do szybkiego parowania w tej samej sieci użyj **kodu parowania**. Kod zawiera token GitHub oraz identyfikator Gista zakodowane w base64 — **nie jest zaszyfrowany**. Nie wysyłaj go przez czat, e-mail, zrzut ekranu ani publiczne zgłoszenie; przekazuj go wyłącznie bezpośrednio między własnymi urządzeniami.
 
 > ⚠️ Hasło szyfrowania **nie jest przechowywane** w aplikacji ani na GitHubie. Jeśli je zgubisz, zsynchronizowanych danych nie da się odzyskać.
 
