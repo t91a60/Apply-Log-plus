@@ -3,28 +3,30 @@
 [![CI](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml/badge.svg)](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Offline-first tracker aplikacji o pracę z szyfrowaniem end-to-end.**
+Tracker aplikacji o pracę z lokalnym zapisem i opcjonalną szyfrowaną synchronizacją.
 
-Śledź swoje aplikacje o pracę na wielu urządzeniach — bez udostępniania danych komukolwiek. Dane pozostają w Twojej przeglądarce (IndexedDB); synchronizacja między urządzeniami wykorzystuje zaszyfrowane GitHub Gisty z hasłem, które znasz tylko Ty.
+Rejestruj aplikacje o pracę lokalnie w IndexedDB. Opcjonalna synchronizacja wysyła zaszyfrowaną migawkę do GitHub Gist; import ofert z URL korzysta z zewnętrznych usług proxy.
 
-> [Otwórz działającą aplikację](https://t91a60.github.io/Apply-Log-plus/) · [🇬🇧 English version](README.md) · [Uwagi bezpieczeństwa](SECURITY.md)
+> [Otwórz aplikację](https://t91a60.github.io/Apply-Log-plus/) · [English version](README.md) · [Uwagi bezpieczeństwa](SECURITY.md)
 
 ---
 
+## Stan
+
+Beta, ocena z 2026-10-23. Testy lokalne i build przeszły. W audycie nie sprawdzono synchronizacji między urządzeniami ani zachowania offline w przeglądarce. [Wyniki i ograniczenia (EN)](docs/STATUS.md).
+
 ## Funkcje
 
-- **Offline-first** — dane lokalnie w IndexedDB, działa bez internetu
-- **Szyfrowanie end-to-end** — synchronizacja przez GitHub Gist, dane szyfrowane AES-256-GCM + PBKDF2 przed opuszczeniem przeglądarki
-- **Dwa języki** — polski i angielski, przełączanie w locie
-- **Własne etapy rekrutacji** — dodawaj, usuwaj, zmieniaj etapy
-- **Wykrywanie duplikatów** — ostrzeżenie gdy ta sama firma+stanowisko już istnieje
-- **Alerty o zaległych aplikacjach** — brak aktualizacji przez 14+ dni lub brak odpowiedzi przez 30+ dni
-- **Oś czasu** — pełna historia etapów dla każdej aplikacji
-- **Statystyki** — wszystkie, aktywne, odrzucone, oferty, przyjęte
-- **Import z URL** — wklej link do oferty, dane uzupełnią się automatycznie
-- **Eksport** — JSON i CSV
-- **Tryb ciemny** — automatycznie (wg ustawień systemu)
-- **Kod parowania** — udostępnij konfigurację między urządzeniami jednorazowym kodem
+- Zapis aplikacji w IndexedDB i edycja własnych etapów rekrutacji.
+- Polski i angielski interfejs.
+- Ostrzeżenia o powtórzonej parze firma/stanowisko.
+- Alerty o braku aktualizacji przez 14+ dni lub odpowiedzi przez 30+ dni.
+- Historia etapów z datami i liczniki według statusu rekrutacji.
+- Import danych oferty z URL przez zewnętrzne proxy.
+- Eksport rekordów do JSON i CSV.
+- Jasny lub ciemny motyw zgodny z ustawieniami systemu.
+- Wysyłanie i pobieranie migawek Gist szyfrowanych AES-256-GCM i PBKDF2.
+- Przenoszenie konfiguracji kodem base64. Kod zawiera token i hasło szyfrowania; nie wygasa i można go użyć ponownie.
 
 ---
 
@@ -36,7 +38,7 @@
 | **Build** | Vite 8 |
 | **Styling** | Tailwind CSS v4 + shadcn/ui |
 | **Storage** | Dexie.js (IndexedDB) |
-| **Stan / Server** | TanStack Query |
+| **Dostęp do danych i cache** | TanStack Query |
 | **Walidacja** | Zod |
 | **i18n** | i18next + react-i18next |
 | **Sync** | GitHub Gist API + AES-256-GCM E2EE |
@@ -56,8 +58,15 @@ pnpm dev
 
 ### Wymagania
 
-- **Node.js** >= 20
-- **pnpm** >= 9
+- **Node.js 24 i pnpm 11**, zgodnie z konfiguracją CI. Niższe minima w `package.json` nie gwarantują zgodności wszystkich narzędzi.
+
+## Ograniczenia i testy
+
+- Pobranie Gista usuwa i zastępuje lokalne aplikacje oraz własne etapy. Brak scalania konfliktów i wspólnej transakcji obu tabel. Najpierw wykonaj eksport kopii.
+- IndexedDB przechowuje rekordy lokalnie, ale aplikacja nie ma service workera do zapisu plików strony w cache. Ponowne otwarcie bez internetu nie jest gwarantowane.
+- Token GitHub jest zapisany w IndexedDB bez szyfrowania aplikacyjnego. Szyfrowanie danych synchronizacji nie chroni tokena przed skryptami z tego samego originu.
+- Import URL wysyła adres oferty do `corsproxy.io` lub `api.allorigins.win` i może zawieść. Nie używaj prywatnych adresów ani linków zawierających tokeny.
+- Audyt: `pnpm test` PASS (117 testów), `pnpm build` PASS z ostrzeżeniem rozmiaru paczki, `pnpm lint` kod 0 z trzema ostrzeżeniami. Nie uruchomiono E2E, coverage ani rzeczywistej synchronizacji Gist.
 
 ---
 
@@ -67,13 +76,13 @@ Sync wykorzystuje GitHub Gist jako warstwę transportową. Dane są **szyfrowane
 
 1. Otwórz panel **Sync** w aplikacji
 2. Wpisz **GitHub Personal Access Token** (zakres: `gist`)
-3. Ustaw **silne hasło szyfrowania** — nie jest zapisywane, wpisujesz przy każdej sesji
-4. Wyślij dane do prywatnego Gista
+3. Ustaw silne hasło szyfrowania. Aplikacja nie utrwala go w IndexedDB.
+4. Wyślij dane do niepublicznego Gista (`public: false`). Znajomość adresu pozwala go odczytać; ochronę treści zapewnia szyfrowanie.
 5. Na drugim urządzeniu wpisz ten sam token + hasło i pobierz
 
-Do szybkiego parowania w tej samej sieci użyj **kodu parowania**. Kod zawiera token GitHub oraz identyfikator Gista zakodowane w base64 — **nie jest zaszyfrowany**. Nie wysyłaj go przez czat, e-mail, zrzut ekranu ani publiczne zgłoszenie; przekazuj go wyłącznie bezpośrednio między własnymi urządzeniami.
+**Kod parowania** zawiera token GitHub, hasło szyfrowania i opcjonalny identyfikator Gista w base64. **Nie jest zaszyfrowany**, nie ma wymuszonego wygaśnięcia i można go użyć ponownie. Nie wysyłaj go przez czat, e-mail, zrzut ekranu ani publiczne zgłoszenie. Przekazuj wyłącznie bezpośrednio między własnymi urządzeniami; aplikacja nie wymusza ograniczenia do tej samej sieci.
 
-> ⚠️ Hasło szyfrowania **nie jest przechowywane** w aplikacji ani na GitHubie. Jeśli je zgubisz, zsynchronizowanych danych nie da się odzyskać.
+> Hasło nie jest utrwalane w IndexedDB ani wysyłane jawnym tekstem do Gista synchronizacji, ale wygenerowany kod parowania zawiera je wprost. Przy wycieku kodu unieważnij zawarty w nim token i potraktuj hasło jako ujawnione. Utrata hasła uniemożliwia odszyfrowanie zsynchronizowanej migawki.
 
 ---
 
@@ -99,4 +108,4 @@ src/
 
 ## Licencja
 
-MIT — zobacz [LICENSE](LICENSE).
+MIT. Zobacz [LICENSE](LICENSE).

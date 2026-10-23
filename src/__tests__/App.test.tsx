@@ -65,13 +65,32 @@ describe('App', () => {
   it('shows loading state', () => {
     vi.mocked(useApplications).mockReturnValue({ data: [], isLoading: true })
     renderWithProviders(<App />)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Loading applications...')
   })
 
   it('renders application table with data', () => {
     renderWithProviders(<App />)
     expect(screen.getByText('Google')).toBeInTheDocument()
     expect(screen.getByText('Engineer')).toBeInTheDocument()
+  })
+
+  it('shows a recoverable load error instead of an empty list', () => {
+    const refetch = vi.fn()
+    vi.mocked(useApplications).mockReturnValue({ data: [], isLoading: false, isError: true, refetch })
+    renderWithProviders(<App />)
+    expect(screen.getByRole('alert')).toHaveTextContent('Could not load your applications.')
+    expect(screen.queryByText('No applications yet. Add your first one!')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(refetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('labels the custom-stage field and prevents empty stage submission', () => {
+    renderWithProviders(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Manage Stages' }))
+    expect(screen.getByRole('dialog', { name: 'Manage Stages' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add stage' })).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('New stage name'), { target: { value: 'Review' } })
+    expect(screen.getByRole('button', { name: 'Add stage' })).toBeEnabled()
   })
 
   it('shows reposted warning banner', () => {

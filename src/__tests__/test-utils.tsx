@@ -9,7 +9,22 @@ const resources = {
   en: {
     translation: {
       app: { title: 'Apply Log+' },
+      common: { close: 'Close', retry: 'Try again' },
       application: {
+        loading: 'Loading applications...',
+        loadError: 'Could not load your applications.',
+        loadErrorHint: 'Try again. Do not clear browser data, as your applications are stored here.',
+        listTitle: 'Job applications',
+        actions: 'Actions',
+        searchLabel: 'Search applications',
+        results_one: '{{count}} application shown',
+        results_other: '{{count}} applications shown',
+        noResults: 'No applications match these filters.',
+        clearFilters: 'Clear filters',
+        hideTimeline: 'Hide',
+        newStageName: 'New stage name',
+        addStage: 'Add stage',
+        importing: 'Importing...',
         add: 'Add Application',
         edit: 'Edit Application',
         delete: 'Delete',
@@ -52,6 +67,7 @@ const resources = {
         Declined: 'Declined',
       },
       stats: {
+        details: 'Statistics details',
         total: 'Total',
         active: 'Active',
         rejected: 'Rejected',

@@ -18,7 +18,7 @@ import type { Application } from '@/db/schema'
 
 function App() {
   const { t, i18n } = useTranslation()
-  const { data: applications = [], isLoading } = useApplications()
+  const { data: applications = [], isLoading, isError, refetch } = useApplications()
   const { data: customStages = [] } = useCustomStages()
   const createMutation = useCreateApplication()
   const updateMutation = useUpdateApplication()
@@ -80,9 +80,9 @@ function App() {
   return (
     <div className="min-h-screen">
       <header className="border-b">
-        <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+        <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between">
           <h1 className="text-xl font-semibold tracking-tight">{t('app.title')}</h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setSyncPanelOpen(true)}>
               {t('sync.title')}
             </Button>
@@ -93,7 +93,7 @@ function App() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+      <main className="mx-auto max-w-5xl px-4 py-6 space-y-6 sm:py-8 sm:space-y-8">
         {reposted.length > 0 && (
           <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 px-4 py-3">
             <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
@@ -118,13 +118,19 @@ function App() {
           </div>
         )}
 
-        {applications.length > 0 && <StatsCards applications={applications} />}
+        {!isError && applications.length > 0 && <StatsCards applications={applications} />}
 
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading...</div>
+          <div role="status" className="text-center py-12 text-muted-foreground">{t('application.loading')}</div>
+        ) : isError ? (
+          <div role="alert" className="rounded-lg border px-4 py-8 text-center space-y-4">
+            <p className="font-medium">{t('application.loadError')}</p>
+            <p className="text-sm text-muted-foreground">{t('application.loadErrorHint')}</p>
+            <Button variant="outline" onClick={() => void refetch()}>{t('common.retry')}</Button>
+          </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={handleExportJson}>
                 {t('application.exportJson')}
               </Button>
@@ -157,7 +163,9 @@ function App() {
             <DialogTitle>{t('application.manageStages')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="space-y-2">
+              <label htmlFor="new-stage-name" className="text-sm font-medium">{t('application.newStageName')}</label>
+              <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 id="new-stage-name"
                 name="new-stage-name"
@@ -167,13 +175,14 @@ function App() {
                 placeholder={t('application.newStagePlaceholder')}
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddStage())}
               />
-              <Button onClick={handleAddStage}>{t('application.add')}</Button>
+              <Button onClick={handleAddStage} disabled={!newStageName.trim()}>{t('application.addStage')}</Button>
+              </div>
             </div>
             {customStages.length > 0 && (
               <div className="space-y-2">
                 {customStages.map(s => (
                   <div key={s.id} className="flex items-center justify-between p-2 rounded-md border">
-                    <span className="text-sm">{s.name}</span>
+                    <span className="min-w-0 text-sm [overflow-wrap:anywhere]">{s.name}</span>
                     <Button
                       variant="ghost"
                       size="sm"

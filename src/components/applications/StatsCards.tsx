@@ -64,81 +64,50 @@ export function StatsCards({ applications }: Props) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{stats.total}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t('stats.total')}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.active}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t('stats.active')}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.rejected}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t('stats.rejected')}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.offers}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t('stats.offers')}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.accepted}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t('stats.accepted')}</div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-4 tabular-nums">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-5">
+        {(['total', 'active', 'rejected', 'offers', 'accepted'] as const).map(key => (
+          <div key={key} className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+            <dt className="text-sm text-muted-foreground">{t(`stats.${key}`)}</dt>
+            <dd className="order-first text-xl font-semibold">{stats[key]}</dd>
+          </div>
+        ))}
+      </dl>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {stats.sortedMonths.length > 0 && (
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm">{t('stats.monthlyTrend')}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="flex items-end gap-2 h-24">
-                {stats.sortedMonths.map(([month, count]) => {
-                  const max = Math.max(...stats.sortedMonths.map(([, c]) => c))
-                  const height = max > 0 ? (count / max) * 100 : 0
-                  return (
-                    <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-xs text-muted-foreground">{count}</span>
-                      <div
-                        className="w-full rounded-sm bg-primary/20 dark:bg-primary/30"
-                        style={{ height: `${height}%`, minHeight: '4px' }}
-                      />
-                      <span className="text-[10px] text-muted-foreground truncate w-full text-center">
-                        {formatMonth(month)}
-                      </span>
+      {stats.sortedMonths.length > 0 && (
+        <details>
+          <summary className="min-h-11 cursor-pointer rounded-md py-3 text-sm font-medium hover:bg-muted/50">{t('stats.details')}</summary>
+          <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm">{t('stats.monthlyTrend')}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <dl className="space-y-2 text-sm">
+                  {stats.sortedMonths.map(([month, count]) => (
+                    <div key={month} className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">{formatMonth(month)}</dt>
+                      <dd className="font-medium">{count}</dd>
                     </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  ))}
+                </dl>
+              </CardContent>
+            </Card>
 
-        {stats.avgResponseDays !== null && (
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm">{t('stats.avgResponse')}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-3xl font-bold text-primary">{stats.avgResponseDays}</div>
-              <div className="text-xs text-muted-foreground mt-1">{t('stats.days')}</div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            {stats.avgResponseDays !== null && (
+              <Card>
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm">{t('stats.avgResponse')}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="text-3xl font-bold text-primary">{stats.avgResponseDays}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t('stats.days')}</div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </details>
+      )}
     </div>
   )
 }
