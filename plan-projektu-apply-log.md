@@ -1,5 +1,7 @@
 # Apply Log+ — Plan projektu
 
+> Plan historyczny, nie aktualna instrukcja wdrożenia. Ocena z 2026-10-23 i granice weryfikacji: [docs/STATUS.md](docs/STATUS.md). Poniższe propozycje architektury nie są dowodem implementacji. Obecny workflow to `.github/workflows/main.yml`; aktualne polecenia i wersje środowiska są w README i konfiguracji CI, nie w przykładowym YAML poniżej.
+
 ## 1. Cel projektu
 
 Apply Log+ to tracker aplikacji o pracę działający w całości w przeglądarce — bez własnego backendu, bez konta. Użytkownik loguje każdą aplikację (firma, rola, etap, data, link do oferty), śledzi jej cykl życia i — kluczowa przewaga nad arkuszem kalkulacyjnym — dostaje narzędzia do wyłapywania firm, które odrzucają kandydatów, a potem wystawiają tę samą ofertę ponownie.
@@ -136,14 +138,19 @@ jobs:
 
 ## 8. Roadmapa
 
-**Faza 1 — fundament:** setup projektu, model danych w Dexie, CRUD aplikacji, tabela z filtrami/search. ✅ ukończono
+Aktualizacja dowodów: 2026-10-23. Wcześniejsze etykiety „ukończono” dla całych faz nie potwierdzały kompletności ich kryteriów.
 
-**Faza 2 — core UX:** custom stages, stats cards, i18n, timeline zmian statusu. ✅ ukończono
+### Done (zweryfikowane)
+- [x] Lokalny model Dexie, komponenty trackera i testy: `pnpm test` PASS, 117 testów; `pnpm build` PASS.
+- [x] Implementacja szyfrowania, transportu Gist i eksportu istnieje w `src/sync/` i `src/lib/export.ts`. To dowód obecności kodu, nie zaliczony test między urządzeniami.
+- [x] Workflow lint/build/test/deploy istnieje; publiczny adres odpowiedział HTTP 200. Nie wykonano testu funkcjonalnego demo.
 
-**Faza 3 — sync bezpieczny:** szyfrowanie E2E, Gist sync, parowanie urządzeń. ✅ ukończono
+### In progress
+Brak potwierdzonego aktywnego zadania implementacyjnego w tym audycie. Nie przypisano pracy na podstawie samego planu.
 
-**Faza 4 — inteligentne dodatki:** wykrywanie duplikatów/reposted ofert, przypomnienia o braku odpowiedzi, import metadanych z linku. ✅ ukończono
+### Planned
+- [ ] Rozszerzone statystyki z pierwotnego zakresu. Kryterium: konkretne miary czasu odpowiedzi/response rate, implementacja i testy; same karty liczników tego nie potwierdzają.
+- [ ] Weryfikacja synchronizacji na dwóch testowych urządzeniach i odtworzenia eksportu. Kryterium: zapisane wyniki scenariuszy push/pull, utraty połączenia i nadpisania danych, bez prawdziwych danych osobowych.
 
-**Faza 5 — hosting:** konfiguracja GitHub Pages, workflow Actions, publiczny deploy. ✅ ukończono
-
-**Faza 6 — polish:** rozszerzone statystyki, eksport JSON/CSV, testy i lint dociągnięte do pełnego pokrycia krytycznych ścieżek. ✅ ukończono
+### Blocked
+- [ ] Deklaracja stable i pełnego pokrycia krytycznych ścieżek: brak wyniku E2E, coverage oraz potwierdzenia ponownego otwarcia offline. Kryterium odblokowania: opublikowane wyniki dla konkretnego commita i jawny opis ograniczeń, nie sama zielona kompilacja.

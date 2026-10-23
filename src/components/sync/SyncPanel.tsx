@@ -126,17 +126,19 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
           <DialogTitle>{t('sync.title')}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-4">
           <Button
             variant={tab === 'config' ? 'default' : 'outline'}
-            size="sm"
+             size="sm"
+             aria-pressed={tab === 'config'}
             onClick={() => setTab('config')}
           >
             {t('sync.config')}
           </Button>
           <Button
             variant={tab === 'pair' ? 'default' : 'outline'}
-            size="sm"
+             size="sm"
+             aria-pressed={tab === 'pair'}
             onClick={() => setTab('pair')}
           >
             {t('sync.pair')}
@@ -186,7 +188,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button onClick={handleSave} disabled={!token.trim()}>
                 {t('sync.saveConfig')}
               </Button>
@@ -247,7 +249,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
                 id="sync-enter-code"
                 name="sync-enter-code"
                 autoComplete="off"
-                className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm font-mono shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-base font-mono sm:text-sm"
                 value={pairCode}
                 onChange={e => setPairCode(e.target.value)}
                 placeholder={t('sync.codePlaceholder')}
@@ -260,7 +262,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
         )}
 
         {status && (
-          <div className="mt-4 text-sm text-muted-foreground border-t pt-3">
+          <div role="status" className="mt-4 text-sm text-muted-foreground border-t pt-3 [overflow-wrap:anywhere]">
             {status}
           </div>
         )}

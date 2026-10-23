@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, within } from '@testing-library/react'
 import { ApplicationTable } from '@/components/applications/ApplicationTable'
 import type { Application } from '@/db/schema'
 import { renderWithProviders } from './test-utils'
@@ -96,8 +96,32 @@ describe('ApplicationTable', () => {
     renderWithProviders(
       <ApplicationTable applications={apps} onEdit={onEdit} onDelete={onDelete} />
     )
-    expect(screen.getByText('Applied')).toBeInTheDocument()
-    expect(screen.getByText('Interview')).toBeInTheDocument()
-    expect(screen.getByText('Rejected')).toBeInTheDocument()
+    const table = within(screen.getByRole('table'))
+    expect(table.getByText('Applied')).toBeInTheDocument()
+    expect(table.getByText('Interview')).toBeInTheDocument()
+    expect(table.getByText('Rejected')).toBeInTheDocument()
+  })
+
+  it('labels search and filters by stage', () => {
+    renderWithProviders(<ApplicationTable applications={apps} onEdit={onEdit} onDelete={onDelete} />)
+    expect(screen.getByRole('searchbox', { name: 'Search applications' })).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Filter by stage' }), { target: { value: 'Interview' } })
+    expect(screen.getByText('Meta')).toBeInTheDocument()
+    expect(screen.queryByText('Google')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('1 application shown')
+  })
+
+  it('explains empty filtered results and clears both filters', () => {
+    renderWithProviders(<ApplicationTable applications={apps} onEdit={onEdit} onDelete={onDelete} />)
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'No match' } })
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Interview' } })
+    expect(screen.getByText('No applications match these filters.')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(screen.getByRole('searchbox')).toHaveValue('')
+    expect(screen.getByRole('combobox')).toHaveValue('')
+    expect(screen.getByRole('table', { name: 'Job applications' })).toBeInTheDocument()
+    expect(screen.getByText('Google')).toBeInTheDocument()
+    expect(screen.getByText('Meta')).toBeInTheDocument()
   })
 })

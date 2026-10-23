@@ -6,7 +6,7 @@ import { fetchUrlMetadata, type UrlMetadata } from '@/lib/urlMetadata'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 import { Timeline } from './Timeline'
 
 interface Props {
@@ -157,7 +157,7 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <label htmlFor="add-company" className="text-sm font-medium">{t('application.company')}</label>
               <Input id="add-company" name="company" autoComplete="organization" value={company} onChange={e => setCompany(e.target.value)} required />
@@ -167,8 +167,8 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
               <Input id="add-role" name="role" autoComplete="organization-title" value={role} onChange={e => setRole(e.target.value)} required />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="min-w-0 space-y-2">
               <label htmlFor="add-url" className="text-sm font-medium">{t('application.url')}</label>
               <div className="flex gap-2">
                 <Input id="add-url" name="url" autoComplete="url" value={url} onChange={e => setUrl(e.target.value)} type="url" />
@@ -179,11 +179,11 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
                   onClick={handleImportUrl}
                   disabled={importingUrl || !url.trim()}
                 >
-                  {importingUrl ? '...' : t('application.importMeta')}
+                  {importingUrl ? t('application.importing') : t('application.importMeta')}
                 </Button>
               </div>
               {importError && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                <p role="alert" className="text-sm text-red-700 dark:text-red-400 mt-1">
                   {t('application.importError')}
                 </p>
               )}
@@ -210,21 +210,14 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
             </div>
             <div className="space-y-2">
               <label htmlFor="add-stage" className="text-sm font-medium">{t('application.stage')}</label>
-              <Select value={stage} onValueChange={setStage}>
-                <SelectTrigger id="add-stage" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {allStages.map(s => (
-                    <SelectItem key={s} value={s}>
-                      {stageLabel(s)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+              <Select id="add-stage" name="stage" value={stage} onValueChange={setStage}>
+                {allStages.map(s => (
+                  <option key={s} value={s}>{stageLabel(s)}</option>
+                ))}
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <label htmlFor="add-location" className="text-sm font-medium">{t('application.location')}</label>
               <Input id="add-location" name="location" autoComplete="address-level2" value={location} onChange={e => setLocation(e.target.value)} />
@@ -240,7 +233,7 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
               id="add-notes"
               name="notes"
               autoComplete="off"
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-sm"
               value={notes}
               onChange={e => setNotes(e.target.value)}
             />
@@ -250,7 +243,7 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
             <Timeline timeline={initialData.timeline} lang={lang} />
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('application.cancel')}
             </Button>

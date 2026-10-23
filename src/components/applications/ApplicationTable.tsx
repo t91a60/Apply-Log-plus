@@ -4,7 +4,7 @@ import type { Application } from '@/db/schema'
 import { DefaultStages, defaultStageLabels } from '@/db/schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 import { StageBadge } from './StageBadge'
 import { Timeline } from './Timeline'
 import type { CustomStage } from '@/db/schema'
@@ -58,7 +58,7 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
 
   if (applications.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
+      <div role="status" className="rounded-lg border border-dashed px-4 py-12 text-center text-muted-foreground">
         {t('application.noApplications')}
       </div>
     )
@@ -66,9 +66,11 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1 space-y-2">
+          <label htmlFor="search-applications" className="text-sm font-medium">{t('application.searchLabel')}</label>
           <Input
+            type="search"
             id="search-applications"
             name="search"
             autoComplete="off"
@@ -77,57 +79,68 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <div className="w-48">
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('application.allStages')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">{t('application.allStages')}</SelectItem>
-              {allStages.map(s => (
-                <SelectItem key={s} value={s}>
-                  {stageLabel(s)}
-                </SelectItem>
-              ))}
-            </SelectContent>
+        <div className="w-full space-y-2 sm:w-52">
+          <label htmlFor="filter-stage" className="text-sm font-medium">{t('application.filterStage')}</label>
+          <Select id="filter-stage" value={stageFilter} onValueChange={setStageFilter}>
+            <option value="">{t('application.allStages')}</option>
+            {allStages.map(s => (
+              <option key={s} value={s}>{stageLabel(s)}</option>
+            ))}
           </Select>
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="h-10 px-4 text-left text-sm font-medium">{t('application.company')}</th>
-              <th className="h-10 px-4 text-left text-sm font-medium">{t('application.role')}</th>
-              <th className="h-10 px-4 text-left text-sm font-medium">{t('application.stage')}</th>
-              <th className="h-10 px-4 text-left text-sm font-medium">{t('application.date')}</th>
-              <th className="h-10 px-4 text-right text-sm font-medium">Actions</th>
+      <p role="status" className="text-sm text-muted-foreground">{t('application.results', { count: filtered.length })}</p>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-lg border border-dashed px-4 py-8 text-center space-y-3">
+          <p className="text-sm text-muted-foreground">{t('application.noResults')}</p>
+          <Button variant="outline" onClick={() => { setSearch(''); setStageFilter('') }}>
+            {t('application.clearFilters')}
+          </Button>
+        </div>
+      ) : (
+      <div className="rounded-lg border">
+        <table role="table" className="block w-full lg:table lg:table-fixed">
+          <caption className="sr-only">{t('application.listTitle')}</caption>
+          <thead role="rowgroup" className="sr-only lg:not-sr-only lg:table-header-group">
+            <tr role="row" className="border-b bg-muted/50">
+              <th scope="col" className="h-11 px-4 text-left text-sm font-medium lg:w-[17%]">{t('application.company')}</th>
+              <th scope="col" className="h-11 px-4 text-left text-sm font-medium lg:w-[18%]">{t('application.role')}</th>
+              <th scope="col" className="h-11 px-4 text-left text-sm font-medium lg:w-[15%]">{t('application.stage')}</th>
+              <th scope="col" className="h-11 px-4 text-left text-sm font-medium lg:w-[15%]">{t('application.date')}</th>
+              <th scope="col" className="h-11 px-4 text-right text-sm font-medium lg:w-[35%]">{t('application.actions')}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup" className="block lg:table-row-group">
             {filtered.map(app => (
-              <tr key={app.id} className="border-b hover:bg-muted/50 transition-colors">
-                <td className="p-4 text-sm font-medium">{app.company}</td>
-                <td className="p-4 text-sm text-muted-foreground">{app.role}</td>
-                <td className="p-4">
+              <tr role="row" key={app.id} className="grid grid-cols-2 gap-3 border-b p-4 last:border-b-0 hover:bg-muted/50 transition-colors lg:table-row lg:p-0">
+                <th role="rowheader" scope="row" className="col-span-2 min-w-0 text-left text-base font-semibold [overflow-wrap:anywhere] lg:p-4 lg:text-sm">
+                  {app.company}
+                </th>
+                <td role="cell" className="col-span-2 min-w-0 text-sm text-muted-foreground [overflow-wrap:anywhere] lg:p-4">{app.role}</td>
+                <td role="cell" className="min-w-0 lg:p-4">
+                  <span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground lg:hidden">{t('application.stage')}</span>
                   <StageBadge
                     stage={app.currentStage}
                     label={stageLabel(app.currentStage)}
                     customColor={stageColor(app.currentStage)}
                   />
                 </td>
-                <td className="p-4 text-sm text-muted-foreground">
+                <td role="cell" className="min-w-0 text-sm text-muted-foreground lg:p-4">
+                  <span aria-hidden="true" className="mb-1 block text-xs lg:hidden">{t('application.date')}</span>
                   {formatDate(app.createdAt)}
                 </td>
-                <td className="p-4 text-right">
-                  <div className="flex justify-end gap-2">
+                <td role="cell" className="col-span-2 min-w-0 lg:p-3">
+                  <div className="flex flex-wrap gap-2 lg:justify-end">
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-expanded={expandedId === app.id}
+                      aria-controls={expandedId === app.id ? 'application-timeline' : undefined}
                       onClick={() => setExpandedId(expandedId === app.id ? null : app.id!)}
                     >
-                      {expandedId === app.id ? 'Hide' : 'Timeline'}
+                      {expandedId === app.id ? t('application.hideTimeline') : t('application.timeline')}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => onEdit(app)}>
                       {t('application.edit')}
@@ -142,12 +155,13 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
           </tbody>
         </table>
       </div>
+      )}
 
       {expandedId && (() => {
         const app = applications.find(a => a.id === expandedId)
         if (!app || app.timeline.length === 0) return null
         return (
-          <div className="rounded-md border bg-muted/30 p-4">
+          <div id="application-timeline" className="rounded-md border bg-muted/30 p-4">
             <Timeline timeline={app.timeline} lang={lang} />
           </div>
         )

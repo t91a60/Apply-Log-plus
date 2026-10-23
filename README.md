@@ -3,28 +3,30 @@
 [![CI](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml/badge.svg)](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Offline-first job application tracker with end-to-end encryption.**
+Job application tracker with local storage and optional encrypted sync.
 
-Track your job applications across devices — without anyone else seeing your data. All data stays in your browser (IndexedDB); sync between devices uses encrypted GitHub Gists with a password only you know.
+Track job applications in your browser using IndexedDB. Optional sync sends an encrypted snapshot to a GitHub Gist; URL import uses external proxy services.
 
-> [Try the live app](https://t91a60.github.io/Apply-Log-plus/) · [🇵🇱 Wersja polska](README.pl.md) · [Security notes](SECURITY.md)
+> [Open the app](https://t91a60.github.io/Apply-Log-plus/) · [Wersja polska](README.pl.md) · [Security notes](SECURITY.md)
 
 ---
 
+## Status
+
+Beta, assessed on 2026-10-23. Local tests and build passed. Cross-device sync and offline browser behavior were not tested. See [verification and limitations](docs/STATUS.md).
+
 ## Features
 
-- **Offline-first** — data stored locally in IndexedDB, works without internet
-- **End-to-end encrypted sync** — sync across devices via GitHub Gist, encrypted with AES-256-GCM + PBKDF2 before leaving your browser
-- **Dual language** — English and Polish interface, switch anytime
-- **Custom pipeline stages** — add, rename, remove stages to match your process
-- **Duplicate & repost detection** — warns when the same company+role already exists or appears multiple times
-- **Stale & ghosted alerts** — flags applications with no update in 14+ days or no response in 30+ days
-- **Rich timeline** — full stage history with dates for every application
-- **Stats dashboard** — total, active, rejected, offers, accepted at a glance
-- **URL import** — paste a job posting URL to auto-fill the form
-- **Export** — JSON and CSV export of all your data
-- **Dark mode** — automatic (respects system preference)
-- **Pairing code** — share sync config between your own devices via one-time code
+- Store applications in IndexedDB and manage custom recruitment stages.
+- Switch between English and Polish.
+- Check for duplicate company/role pairs.
+- Flag applications with no update for 14+ days or no response for 30+ days.
+- View stage history, dates and counts by recruitment status.
+- Import job metadata from a URL through external proxies.
+- Export records as JSON or CSV.
+- Use the system's light or dark theme preference.
+- Push and pull Gist snapshots encrypted with AES-256-GCM and PBKDF2.
+- Transfer sync configuration using a base64 pairing code. The code includes the token and encryption password; it has no expiry or single-use protection.
 
 ---
 
@@ -36,7 +38,7 @@ Track your job applications across devices — without anyone else seeing your d
 | **Build** | Vite 8 |
 | **Styling** | Tailwind CSS v4 + shadcn/ui |
 | **Storage** | Dexie.js (IndexedDB) |
-| **State / Server** | TanStack Query |
+| **Data access and cache** | TanStack Query |
 | **Validation** | Zod |
 | **i18n** | i18next + react-i18next |
 | **Sync** | GitHub Gist API + AES-256-GCM E2EE |
@@ -67,8 +69,15 @@ pnpm test:e2e        # E2E tests (requires Chromium)
 
 ### Prerequisites
 
-- **Node.js** >= 20
-- **pnpm** >= 9
+- **Node.js 24 and pnpm 11** match the repository CI configuration. The broader minimums in `package.json` do not guarantee compatibility with every installed tool version.
+
+## Limitations and verification
+
+- Pulling a Gist clears and replaces local applications and custom stages. There is no conflict merge or transaction covering both tables; export a backup first.
+- IndexedDB stores records locally, but there is no service worker to cache the app itself. Reopening the page offline is not guaranteed.
+- The GitHub token is saved in IndexedDB without application-level encryption. Encrypting sync data does not protect the token against scripts running in the same origin.
+- URL import sends the job URL to `corsproxy.io` or `api.allorigins.win` and may fail for unsupported pages. Do not import private or token-bearing URLs.
+- Audit checks: `pnpm test` passed (117 tests); `pnpm build` passed with a chunk-size warning; `pnpm lint` exited successfully with three warnings. E2E, coverage and live Gist sync were not run.
 
 ---
 
@@ -78,13 +87,13 @@ Sync uses GitHub Gists as a transport layer. Your data is **encrypted before it 
 
 1. Open **Sync** panel in the app
 2. Enter your **GitHub Personal Access Token** (scope: `gist`)
-3. Set a **strong encryption password** — this is never stored, you re-enter it each session
-4. Push your data to a private Gist
+3. Set a strong encryption password. The app does not persist it to IndexedDB.
+4. Push your data to a secret Gist (`public: false`). Its unlisted URL is not access control; the payload is encrypted.
 5. On another device, enter the same token + password and pull
 
-For same-network setup, use the **Pairing Code** — a one-time code that bundles the GitHub token and Gist ID in base64. It is **not encrypted**: never send it through chat, email, screenshots, or a public issue. Share it only directly between devices you control.
+The **Pairing Code** bundles the GitHub token, encryption password and optional Gist ID in base64. It is **not encrypted**, has no enforced expiry and can be reused. Never send it through chat, email, screenshots or a public issue. Transfer it only directly between devices you control; the app does not enforce a same-network restriction.
 
-> ⚠️ The encryption password is **never saved** in the app or on GitHub. If you lose it, your synced data cannot be recovered.
+> The encryption password is not persisted to IndexedDB or sent as plaintext to the sync Gist, but generating a pairing code explicitly includes it in that code. If a code leaks, revoke the included token and treat the encryption password as compromised. Losing the password prevents decryption of the synced snapshot.
 
 ---
 
@@ -122,10 +131,4 @@ See [SECURITY.md](SECURITY.md) for the threat model, scope, and vulnerability re
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
----
-
-## Why Apply Log+?
-
-Most job trackers are SaaS — your data lives on someone else's server. Apply Log+ is built for privacy-first job seekers who want full control over their application data without trusting a third party.
+MIT. See [LICENSE](LICENSE).

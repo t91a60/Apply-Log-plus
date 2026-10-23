@@ -49,6 +49,7 @@ describe('StatsCards', () => {
     ]
     renderWithProviders(<StatsCards applications={apps} />)
     expect(screen.getByText('Monthly Trend')).toBeInTheDocument()
+    expect(screen.getByText('Statistics details').closest('details')).not.toHaveAttribute('open')
   })
 
   it('shows avg response time when apps have timeline entries', () => {
