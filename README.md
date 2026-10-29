@@ -13,7 +13,7 @@ Track job applications in your browser using IndexedDB. Optional sync sends an e
 
 ## Status
 
-Beta, assessed on 2026-10-23. Local tests and build passed. Cross-device sync and offline browser behavior were not tested. See [verification and limitations](docs/STATUS.md).
+Beta, assessed on 2026-10-23. Local tests and build passed. Cross-device sync and offline browser behavior were not tested. See [limitations and verification](#limitations-and-verification).
 
 ## Features
 
@@ -59,6 +59,7 @@ pnpm install --frozen-lockfile
 
 # dev server
 pnpm dev
+# open http://localhost:5173/Apply-Log-plus/ (or the URL printed by Vite)
 
 # lint + test
 pnpm lint
@@ -66,6 +67,17 @@ pnpm test
 pnpm test:coverage   # with coverage report
 pnpm test:e2e        # E2E tests (requires Chromium)
 ```
+
+### Build and configuration
+
+```bash
+pnpm build
+pnpm preview
+```
+
+The build writes `dist/`. The Vite base path is `/Apply-Log-plus/`; keep this path when serving the build or adjust `vite.config.ts` for a different hosting location. The GitHub Actions workflow runs lint, build and unit tests, then deploys successful pushes to `main` to GitHub Pages.
+
+Local tracking needs no account, server or environment variables. Configure optional sync in the app's **Sync** panel. `.env.example` contains a token placeholder, but the sync code reads its token from IndexedDB rather than `VITE_GITHUB_PAT`. Do not put credentials in Vite environment variables: values exposed to browser code become public build assets.
 
 ### Prerequisites
 
@@ -77,9 +89,15 @@ pnpm test:e2e        # E2E tests (requires Chromium)
 - IndexedDB stores records locally, but there is no service worker to cache the app itself. Reopening the page offline is not guaranteed.
 - The GitHub token is saved in IndexedDB without application-level encryption. Encrypting sync data does not protect the token against scripts running in the same origin.
 - URL import sends the job URL to `corsproxy.io` or `api.allorigins.win` and may fail for unsupported pages. Do not import private or token-bearing URLs.
-- Audit checks: `pnpm test` passed (117 tests); `pnpm build` passed with a chunk-size warning; `pnpm lint` exited successfully with three warnings. E2E, coverage and live Gist sync were not run.
+- Documentation verification on 2026-10-29: `pnpm test` passed (125 tests); `pnpm build` passed with a chunk-size warning; `pnpm lint` exited successfully with three warnings. E2E, coverage and live Gist sync were not run.
 
 ---
+
+## Everyday use
+
+Add an application with a company, role and recruitment stage. Open an existing record to update its stage and review its timeline. Use custom stages for your own process and export JSON or CSV before replacing local data through sync. JSON and CSV exports are readable files; keep application details and notes in a trusted location.
+
+For browser tests, install Chromium once with `pnpm exec playwright install chromium` before `pnpm test:e2e`.
 
 ## Synchronisation (E2EE)
 
@@ -116,6 +134,13 @@ src/
 ```
 
 ---
+
+## Troubleshooting
+
+- **Build tools reject Node.js:** use Node.js 24 and pnpm 11, matching CI, and reinstall with the frozen lockfile.
+- **Blank page on another host:** check that the deployment serves the configured `/Apply-Log-plus/` base path.
+- **Gist pull fails:** confirm the token, Gist ID and encryption password. Export local data before retrying a pull; a successful pull replaces it.
+- **URL import fails:** enter the details manually when a site blocks the external proxies or has unsupported markup.
 
 ## Contributing
 
