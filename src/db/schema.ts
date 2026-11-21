@@ -16,6 +16,8 @@ export const StageEnum = z.enum(DefaultStages)
 export type DefaultStage = z.infer<typeof StageEnum>
 
 export type Stage = string
+export const RecordIdSchema = z.union([z.string().min(1), z.number().int().positive()])
+export type RecordId = z.infer<typeof RecordIdSchema>
 
 export const defaultStageLabels: Record<DefaultStage, { en: string; pl: string }> = {
   Applied: { en: 'Applied', pl: 'Aplikowano' },
@@ -30,7 +32,7 @@ export const defaultStageLabels: Record<DefaultStage, { en: string; pl: string }
 }
 
 export const CustomStageSchema = z.object({
-  id: z.string().optional(),
+  id: RecordIdSchema.optional(),
   name: z.string().min(1, 'Stage name is required'),
   color: z.string().default('bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700'),
 })
@@ -46,7 +48,7 @@ export const StageTimelineEntrySchema = z.object({
 export type StageTimelineEntry = z.infer<typeof StageTimelineEntrySchema>
 
 export const ApplicationSchema = z.object({
-  id: z.string().optional(),
+  id: RecordIdSchema.optional(),
   company: z.string().min(1, 'Company is required'),
   role: z.string().min(1, 'Role is required'),
   url: z.string().url().optional().or(z.literal('')),
@@ -60,3 +62,7 @@ export const ApplicationSchema = z.object({
 })
 
 export type Application = z.infer<typeof ApplicationSchema>
+
+export function getStageLabel(stage: string, lang: 'en' | 'pl'): string {
+  return Object.hasOwn(defaultStageLabels, stage) ? defaultStageLabels[stage as DefaultStage][lang] : stage
+}

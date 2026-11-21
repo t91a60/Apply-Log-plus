@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import App from '@/App'
 import { renderWithProviders } from './test-utils'
 import type { Application, CustomStage } from '@/db/schema'
@@ -111,11 +111,14 @@ describe('App', () => {
     expect(screen.getByText(/1 application\(s\) have not heard back/)).toBeInTheDocument()
   })
 
-  it('opens sync panel when sync button clicked', () => {
+  it('opens sync panel when sync button clicked', async () => {
     renderWithProviders(<App />)
     const syncBtn = screen.getByText('Sync')
     fireEvent.click(syncBtn)
-    expect(screen.getByText('Configuration')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Sync' })).toBeInTheDocument()
+    const token = screen.getByLabelText('GitHub Personal Access Token')
+    await waitFor(() => expect(token).toBeEnabled())
+    expect(token).toHaveAttribute('type', 'password')
   })
 
   it('opens add dialog when Add button clicked', () => {
@@ -157,7 +160,7 @@ describe('App', () => {
     fireEvent.click(deleteBtn)
 
     expect(confirmSpy).toHaveBeenCalled()
-    expect(mockDelete).toHaveBeenCalledWith('1')
+    expect(mockDelete).toHaveBeenCalledWith('1', expect.objectContaining({ onError: expect.any(Function) }))
 
     confirmSpy.mockRestore()
   })

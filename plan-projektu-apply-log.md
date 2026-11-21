@@ -43,7 +43,7 @@ Jedyne dwie realne zmiany względem punktu wyjścia to **silnik danych** (Dexie 
 - **Wykrywanie duplikatów/reposted ofert** — dopasowanie po nazwie firmy + roli, żeby złapać firmy odrzucające kandydatów i wystawiające tę samą ofertę ponownie
 - **Timeline per aplikacja** — pełna historia zmian etapów z datami, nie tylko aktualny status
 - **Przypomnienia o braku odpowiedzi** — flaga w tabeli po X dniach ciszy, opcjonalne powiadomienia przeglądarki
-- **Import metadanych z linku oferty** — parsowanie meta tagów strony przy dodawaniu aplikacji, mniej ręcznego wpisywania
+- **Linki do ofert** — ręczne zapisanie i otwarcie linku. Brak pobierania metadanych przez publiczne proxy.
 - **Rozszerzone statystyki** — czas odpowiedzi per firma/branża, response rate w czasie
 - **Eksport danych do JSON/CSV** — niezależnie od mechanizmu sync
 
@@ -69,9 +69,9 @@ Oryginalny model (PAT w localStorage, jawne dane w sekretnym Giście) ma dwie s�
 
 Poprawki:
 1. **Szyfrowanie end-to-end** — dane szyfrowane hasłem użytkownika (Web Crypto API, AES-GCM) przed wysłaniem do Gista.
-2. **PAT przechowywany w IndexedDB**, nie w localStorage, z jasnym opisem zakresu uprawnień w UI.
-3. **Parowanie urządzeń przez QR/krótki kod** zamiast ręcznego przepisywania Gist ID.
-4. Model "brak własnego serwera" zostaje — to mocna cecha oryginału — ale disclaimer o naturze Gista trafia do onboardingu, nie tylko do README.
+2. **PAT i hasło tylko w pamięci otwartego okna synchronizacji.** IndexedDB zapamiętuje jedynie ID Gista; stary token jest usuwany.
+3. **Przenoszenie migawki na drugie urządzenie:** przepisz ID Gista; token i hasło podaj osobno. Nie generujemy kodu zawierającego sekrety.
+4. Brak własnego serwera. GitHub Gist jest opcjonalny, a zastępowanie migawki wymaga potwierdzenia i nie scala zmian.
 
 ## 7. Hosting i wdrożenie (GitHub Pages + Actions)
 
@@ -134,7 +134,7 @@ jobs:
 2. `base` w `vite.config.ts` ustawiony na nazwę repo
 3. Decyzja: `HashRouter` czy `404.html`
 4. Workflow w `.github/workflows/deploy.yml`
-5. Push na `main` uruchamia deploy automatycznie
+5. Push na `main` uruchamia weryfikację. Wdrożenie i publikacja wymagają osobnego ręcznego uruchomienia workflow.
 
 ## 8. Roadmapa
 

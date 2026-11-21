@@ -1,18 +1,18 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Application } from '@/db/schema'
-import { DefaultStages, defaultStageLabels } from '@/db/schema'
+import { DefaultStages, getStageLabel, type Application, type RecordId } from '@/db/schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { StageBadge } from './StageBadge'
 import { Timeline } from './Timeline'
 import type { CustomStage } from '@/db/schema'
+import { getOfferHref } from '@/lib/offerUrl'
 
 interface Props {
   applications: Application[]
   onEdit: (app: Application) => void
-  onDelete: (id: string) => void
+  onDelete: (id: RecordId) => void
   customStages?: CustomStage[]
 }
 
@@ -20,9 +20,9 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
   const { t, i18n } = useTranslation()
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<RecordId | null>(null)
 
-  const allStages = [...DefaultStages, ...customStages.map(s => s.name)]
+  const allStages = [...new Set([...DefaultStages, ...customStages.map(s => s.name), ...applications.map(a => a.currentStage)])]
 
   const filtered = useMemo(() => {
     return applications.filter(app => {
@@ -42,13 +42,6 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
       day: 'numeric',
       year: 'numeric',
     })
-  }
-
-  function stageLabel(s: string) {
-    if (s in defaultStageLabels) {
-      return defaultStageLabels[s as keyof typeof defaultStageLabels][lang]
-    }
-    return s
   }
 
   function stageColor(s: string) {
@@ -84,7 +77,7 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
           <Select id="filter-stage" value={stageFilter} onValueChange={setStageFilter}>
             <option value="">{t('application.allStages')}</option>
             {allStages.map(s => (
-              <option key={s} value={s}>{stageLabel(s)}</option>
+              <option key={s} value={s}>{getStageLabel(s, lang)}</option>
             ))}
           </Select>
         </div>
@@ -113,45 +106,54 @@ export function ApplicationTable({ applications, onEdit, onDelete, customStages 
             </tr>
           </thead>
           <tbody role="rowgroup" className="block lg:table-row-group">
-            {filtered.map(app => (
-              <tr role="row" key={app.id} className="grid grid-cols-2 gap-3 border-b p-4 last:border-b-0 hover:bg-muted/50 transition-colors lg:table-row lg:p-0">
-                <th role="rowheader" scope="row" className="col-span-2 min-w-0 text-left text-base font-semibold [overflow-wrap:anywhere] lg:p-4 lg:text-sm">
-                  {app.company}
-                </th>
-                <td role="cell" className="col-span-2 min-w-0 text-sm text-muted-foreground [overflow-wrap:anywhere] lg:p-4">{app.role}</td>
-                <td role="cell" className="min-w-0 lg:p-4">
-                  <span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground lg:hidden">{t('application.stage')}</span>
-                  <StageBadge
-                    stage={app.currentStage}
-                    label={stageLabel(app.currentStage)}
-                    customColor={stageColor(app.currentStage)}
-                  />
-                </td>
-                <td role="cell" className="min-w-0 text-sm text-muted-foreground lg:p-4">
-                  <span aria-hidden="true" className="mb-1 block text-xs lg:hidden">{t('application.date')}</span>
-                  {formatDate(app.createdAt)}
-                </td>
-                <td role="cell" className="col-span-2 min-w-0 lg:p-3">
-                  <div className="flex flex-wrap gap-2 lg:justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-expanded={expandedId === app.id}
-                      aria-controls={expandedId === app.id ? 'application-timeline' : undefined}
-                      onClick={() => setExpandedId(expandedId === app.id ? null : app.id!)}
-                    >
-                      {expandedId === app.id ? t('application.hideTimeline') : t('application.timeline')}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => onEdit(app)}>
-                      {t('application.edit')}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => onDelete(app.id!)}>
-                      {t('application.delete')}
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {filtered.map(app => {
+              const href = getOfferHref(app.url)
+              return (
+                <tr role="row" key={`${typeof app.id}:${app.id}`} className="grid grid-cols-2 gap-3 border-b p-4 last:border-b-0 hover:bg-muted/50 transition-colors lg:table-row lg:p-0">
+                  <th role="rowheader" scope="row" className="col-span-2 min-w-0 text-left text-base font-semibold [overflow-wrap:anywhere] lg:p-4 lg:text-sm">
+                    {app.company}
+                  </th>
+                  <td role="cell" className="col-span-2 min-w-0 text-sm text-muted-foreground [overflow-wrap:anywhere] lg:p-4">
+                    <span>{app.role}</span>
+                    {href && <a href={href} target="_blank" rel="noopener noreferrer"
+                      className="mt-1 block w-fit rounded-sm text-sm text-primary underline underline-offset-2">
+                      {t('application.openOffer')}
+                    </a>}
+                  </td>
+                  <td role="cell" className="min-w-0 lg:p-4">
+                    <span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground lg:hidden">{t('application.stage')}</span>
+                    <StageBadge
+                      stage={app.currentStage}
+                      label={getStageLabel(app.currentStage, lang)}
+                      customColor={stageColor(app.currentStage)}
+                    />
+                  </td>
+                  <td role="cell" className="min-w-0 text-sm text-muted-foreground lg:p-4">
+                    <span aria-hidden="true" className="mb-1 block text-xs lg:hidden">{t('application.date')}</span>
+                    {formatDate(app.createdAt)}
+                  </td>
+                  <td role="cell" className="col-span-2 min-w-0 lg:p-3">
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-expanded={expandedId === app.id}
+                        aria-controls={expandedId === app.id ? 'application-timeline' : undefined}
+                        onClick={() => setExpandedId(expandedId === app.id ? null : app.id!)}
+                      >
+                        {expandedId === app.id ? t('application.hideTimeline') : t('application.timeline')}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => onEdit(app)}>
+                        {t('application.edit')}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => onDelete(app.id!)}>
+                        {t('application.delete')}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

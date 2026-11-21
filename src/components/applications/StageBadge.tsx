@@ -16,7 +16,7 @@ const defaultStageColors: Record<DefaultStage, string> = {
 const defaultColor = 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700'
 
 export function StageBadge({ stage, label, customColor }: { stage: Stage; label: string; customColor?: string }) {
-  const color = stage in defaultStageColors
+  const color = Object.hasOwn(defaultStageColors, stage)
     ? defaultStageColors[stage as DefaultStage]
     : (customColor ?? defaultColor)
 

@@ -19,14 +19,14 @@
     "url": "git+https://github.com/t91a60/Apply-Log-plus.git"
   },
   "engines": {
-    "node": ">=20",
-    "pnpm": ">=9"
+    "node": ">=24",
+    "pnpm": ">=11 <12"
   },
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "lint": "oxlint --deny-warnings",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
@@ -47,10 +47,9 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-i18next": "^17.0.8",
-    "react-router-dom": "^7.18.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.2",
-    "zod": "^4.4.3"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
@@ -62,7 +61,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.12",
     "fake-indexeddb": "^6.2.5",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
@@ -70,7 +69,7 @@
     "oxlint-tsgolint": "^0.24.0",
     "semantic-release": "^25.0.7",
     "typescript": "~6.0.2",
-    "vite": "^8.1.1",
-    "vitest": "^4.1.9"
+    "vite": "^8.1.6",
+    "vitest": "^4.1.12"
   }
 }

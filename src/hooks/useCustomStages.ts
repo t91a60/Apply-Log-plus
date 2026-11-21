@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { db } from '@/db/database'
-import type { CustomStage } from '@/db/schema'
+import { CustomStageSchema, DefaultStages, type CustomStage, type RecordId } from '@/db/schema'
 
 const CUSTOM_STAGES_KEY = ['customStages'] as const
 
@@ -9,15 +9,19 @@ async function fetchCustomStages(): Promise<CustomStage[]> {
 }
 
 async function addCustomStage(data: { name: string; color?: string }) {
-  const stage: CustomStage = {
-    name: data.name,
-    color: data.color ?? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700',
-  }
-  const id = await db.customStages.add(stage)
-  return { ...stage, id: String(id) }
+  const stage = CustomStageSchema.parse({ ...data, name: data.name.trim() })
+  const name = stage.name.toLowerCase()
+  return db.transaction('rw', db.customStages, async () => {
+    const stages = await db.customStages.toArray()
+    if (DefaultStages.some(item => item.toLowerCase() === name) || stages.some(item => item.name.toLowerCase() === name)) {
+      throw new Error('Duplicate stage')
+    }
+    const id = await db.customStages.add(stage)
+    return { ...stage, id }
+  })
 }
 
-async function removeCustomStage(id: string) {
+async function removeCustomStage(id: RecordId) {
   await db.customStages.delete(id)
   return id
 }

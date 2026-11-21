@@ -1,22 +1,21 @@
-# Security Policy
+# Security policy
 
-## Reporting a Vulnerability
+Report suspected vulnerabilities privately to [the maintainer](mailto:t91a60@gmail.com). Never include tokens, passphrases, private Gist URLs, personal data, or reproduction details in public GitHub issues.
 
-This project handles personal data (job applications, recruiter contacts) and supports encryption for cloud sync. Report a suspected vulnerability privately to [the maintainer](mailto:t91a60@gmail.com). A normal GitHub Issue, even with a `security` label, is public: do not put exploit details, personal data, pairing codes or tokens there.
+## Data and credentials
 
-Do not disclose the vulnerability publicly until it has been addressed.
+- **Local storage:** IndexedDB and downloaded JSON/CSV files are plaintext at the application level. Production offline caching stores only static application files, not Gist responses or exports.
+- **Gist:** Snapshots use browser-side AES-256-GCM with a random salt and nonce and PBKDF2-SHA-256 with 600,000 iterations. Gist receives the ciphertext, not the passphrase. Secret Gists are [unlisted, not access-controlled](https://docs.github.com/en/get-started/writing-on-github/editing-and-sharing-content-with-gists/creating-gists).
+- **Token and passphrase:** Held in memory while the sync dialog is open. The application remembers only the Gist ID and removes known credential entries from older IndexedDB versions. Browser password managers or extensions may behave independently. Never put a token in a Vite environment variable or in a repository.
+- **Threat model:** Encryption protects a snapshot, not against a compromised browser profile, installed extension, malicious deployment, weak passphrase, or losses after clearing site data. It does not hide Gist metadata from GitHub or prevent concurrent writers from overwriting each other.
+- **Offer links:** The app does not fetch metadata or send URLs to public proxies. Opening an offer link contacts its destination.
 
-## Scope
+## Legacy pairing and credential rotation
 
-- **E2E encryption**: AES-GCM with PBKDF2 (600k iterations). Encryption password is never persisted to IndexedDB.
-- **GitHub Gist sync**: Data is encrypted before being sent to Gist. A GitHub Personal Access Token with `gist` scope is required.
-- **Pairing code**: Includes the GitHub token, encryption password and optional Gist ID in base64. This is encoding, not encryption; there is no enforced expiry or single-use protection. Transfer only directly between trusted devices. The code is sufficient to expose both the transport credentials and the decryption password.
-- **IndexedDB**: Local records and the GitHub token are stored in the browser. The token has no application-level encryption and is accessible to scripts in the same origin. The app has no own backend, but optional sync stores encrypted snapshots on GitHub.
-- **Third-party CORS proxy**: URL metadata import sends the supplied job URL through public proxies (`corsproxy.io`, `api.allorigins.win`). Do not submit private or token-bearing URLs. The app cannot guarantee that those addresses contain no sensitive data.
+Old pairing codes bundled the token and passphrase in base64, which is not encryption. If a code was sent, copied to shared storage, or shown to someone else, treat both credentials as exposed. Also rotate tokens that were saved by old builds if the browser or its data might have been accessed.
 
-## Best practices for users
+1. Revoke the old GitHub token. Create a new dedicated, expiring token only if you still need Gist sync.
+2. Verify your local data and export a JSON backup. If the only usable copy is an encrypted Gist, use the old passphrase and a valid token to download it first.
+3. Use a new, strong passphrase and leave the Gist ID blank to create a new snapshot. After verifying it, retire the old Gist and review its revisions or copies. Updating or deleting a Gist cannot revoke data someone already copied.
 
-- Use a dedicated GitHub PAT with minimal scope (`gist` only).
-- Use a strong, unique encryption password for Gist sync.
-- Clear sync configuration when using a shared/public computer.
-- A pairing code contains both your token and encryption password. If it leaks, revoke the token, change the encryption password and replace the remote snapshot. This does not revoke copies already downloaded by someone else.
+There is no passphrase recovery or merge service. Keep a separate backup.

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { Timeline } from '@/components/applications/Timeline'
 import type { StageTimelineEntry } from '@/db/schema'
+import { renderWithProviders as render } from './test-utils'
 
 describe('Timeline', () => {
   it('returns null when timeline is empty', () => {

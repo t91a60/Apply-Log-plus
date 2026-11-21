@@ -7,7 +7,7 @@ describe('cn', () => {
   })
 
   it('handles conditional classes', () => {
-    expect(cn('base', false && 'hidden', 'visible')).toBe('base visible')
+    expect(cn('base', { hidden: false, visible: true })).toBe('base visible')
   })
 
   it('merges tailwind classes correctly', () => {

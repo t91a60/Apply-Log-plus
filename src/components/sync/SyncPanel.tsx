@@ -1,271 +1,112 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  loadSyncStorage, saveSyncConfig, clearSyncConfig,
-  pushToGist, pullFromGist,
-} from '@/sync/syncManager'
-import { generatePairingCode, decodePairingCode } from '@/sync/gist'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { clearSyncConfig, loadGistId, MIN_NEW_PASSWORD_LENGTH, pullFromGist, pushToGist, SyncError } from '@/sync/syncManager'
+import { isGistId } from '@/sync/gist'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSyncComplete: () => void
+  onSyncComplete: () => Promise<void>
 }
 
 export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
   const { t } = useTranslation()
-  const [tab, setTab] = useState<'config' | 'pair'>('config')
   const [token, setToken] = useState('')
   const [password, setPassword] = useState('')
   const [gistId, setGistId] = useState('')
-  const [pairCode, setPairCode] = useState('')
-  const [showPairCode, setShowPairCode] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
-  const [isConfigured, setIsConfigured] = useState(false)
+  const [confirm, setConfirm] = useState(false)
+  const [status, setStatus] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const inFlight = useRef(false)
 
   useEffect(() => {
-    if (open) {
-      setPassword('')
-      setPairCode('')
-      setStatus(null)
-      void loadSyncStorage().then(storage => {
-        if (storage) {
-          setToken(storage.token)
-          setGistId(storage.gistId ?? '')
-          setIsConfigured(true)
-        }
-      })
-    }
+    if (!open) return
+    let active = true
+    void loadGistId().then(id => {
+      if (active) setGistId(id)
+    }).catch(() => {
+      if (active) setStatus('error')
+    }).finally(() => {
+      if (active) setLoading(false)
+    })
+    return () => { active = false }
   }, [open])
 
-  async function handleSave() {
-    if (!token.trim()) return
-    await saveSyncConfig({
-      token: token.trim(),
-      gistId: gistId.trim() || undefined,
-    })
-    setIsConfigured(true)
-    setStatus(t('sync.configSaved'))
-  }
+  const id = gistId.trim()
+  const invalidId = !!id && !isGistId(id)
+  const locked = loading || busy
+  const ready = !locked && !!token.trim() && !!password && !invalidId && (!id || confirm)
 
-  async function handlePush() {
-    if (!password) {
-      setStatus(t('sync.passwordRequired'))
-      return
-    }
-    setStatus(t('sync.syncing'))
+  async function run(action: 'push' | 'pull' | 'clear') {
+    if (inFlight.current || locked || (action !== 'clear' && !ready) || (action === 'pull' && !id)) return
+    inFlight.current = true
+    setBusy(true)
+    setStatus('syncing')
     try {
-      await pushToGist(password)
-      setStatus(t('sync.pushSuccess'))
-      onSyncComplete()
-    } catch (e) {
-      setStatus(`${t('sync.error')}: ${(e as Error).message}`)
-    }
-  }
-
-  async function handlePull() {
-    if (!password) {
-      setStatus(t('sync.passwordRequired'))
-      return
-    }
-    setStatus(t('sync.syncing'))
-    try {
-      await pullFromGist(password)
-      setStatus(t('sync.pullSuccess'))
-      onSyncComplete()
-    } catch (e) {
-      setStatus(`${t('sync.error')}: ${(e as Error).message}`)
-    }
-  }
-
-  async function handleClear() {
-    await clearSyncConfig()
-    setToken('')
-    setPassword('')
-    setGistId('')
-    setIsConfigured(false)
-    setStatus(t('sync.configCleared'))
-  }
-
-  function handleGenerateCode() {
-    if (!password) {
-      setStatus(t('sync.passwordRequired'))
-      return
-    }
-    const code = generatePairingCode({
-      token,
-      password,
-      gistId: gistId || undefined,
-    })
-    setPairCode(code)
-  }
-
-  async function handleDecodeCode() {
-    try {
-      const config = decodePairingCode(pairCode)
-      setToken(config.token)
-      setPassword(config.password)
-      setGistId(config.gistId ?? '')
-      await saveSyncConfig({ token: config.token, gistId: config.gistId })
-      setIsConfigured(true)
-      setStatus(t('sync.pairSuccess'))
-    } catch {
-      setStatus(t('sync.invalidCode'))
+      if (action === 'clear') {
+        await clearSyncConfig()
+        setGistId('')
+        setToken('')
+        setPassword('')
+        setStatus('configCleared')
+      } else if (action === 'push') {
+        setGistId(await pushToGist(token.trim(), password, id || undefined))
+        setStatus('pushSuccess')
+      } else {
+        await pullFromGist(token.trim(), password, id)
+        await onSyncComplete()
+        setStatus('pullSuccess')
+      }
+    } catch (error) {
+      setStatus(error instanceof SyncError ? error.reason : 'error')
+    } finally {
+      inFlight.current = false
+      setConfirm(false)
+      setBusy(false)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={next => { if (!inFlight.current) onOpenChange(next) }}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('sync.title')}</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Button
-            variant={tab === 'config' ? 'default' : 'outline'}
-             size="sm"
-             aria-pressed={tab === 'config'}
-            onClick={() => setTab('config')}
-          >
-            {t('sync.config')}
-          </Button>
-          <Button
-            variant={tab === 'pair' ? 'default' : 'outline'}
-             size="sm"
-             aria-pressed={tab === 'pair'}
-            onClick={() => setTab('pair')}
-          >
-            {t('sync.pair')}
-          </Button>
-        </div>
-
-        {tab === 'config' && (
-          <form onSubmit={e => e.preventDefault()} className="space-y-4">
-            <input type="text" name="username" autoComplete="username" className="hidden" aria-hidden="true" tabIndex={-1} />
+        <DialogHeader><DialogTitle>{t('sync.title')}</DialogTitle></DialogHeader>
+        <p className="mb-4 text-sm text-muted-foreground">{t('sync.description')}</p>
+        <form onSubmit={event => event.preventDefault()}>
+          <fieldset disabled={locked} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="sync-token" className="text-sm font-medium">GitHub Personal Access Token</label>
-              <Input
-                id="sync-token"
-                name="sync-token"
-                autoComplete="off"
-                type="password"
-                value={token}
-                onChange={e => setToken(e.target.value)}
-                placeholder="ghp_..."
-              />
+              <Input id="sync-token" type="password" autoComplete="off" value={token} onChange={event => setToken(event.target.value)} />
               <p className="text-xs text-muted-foreground">{t('sync.tokenHint')}</p>
             </div>
-
             <div className="space-y-2">
               <label htmlFor="sync-password" className="text-sm font-medium">{t('sync.password')}</label>
-              <Input
-                id="sync-password"
-                name="sync-password"
-                autoComplete="new-password"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder={t('sync.passwordHint')}
-              />
-              <p className="text-xs text-muted-foreground">{t('sync.passwordSessionHint')}</p>
+              <Input id="sync-password" type="password" autoComplete="off" value={password} onChange={event => setPassword(event.target.value)} />
+              {!id && <p className="text-xs text-muted-foreground">{t('sync.shortPassword', { length: MIN_NEW_PASSWORD_LENGTH })}</p>}
             </div>
-
             <div className="space-y-2">
-              <label htmlFor="sync-gist-id" className="text-sm font-medium">Gist ID ({t('sync.optional')})</label>
-              <Input
-                id="sync-gist-id"
-                name="sync-gist-id"
-                autoComplete="off"
-                value={gistId}
-                onChange={e => setGistId(e.target.value)}
-                placeholder={t('sync.gistHint')}
-              />
+              <label htmlFor="sync-gist-id" className="text-sm font-medium">Gist ID</label>
+              <Input id="sync-gist-id" autoComplete="off" aria-invalid={invalidId} value={gistId}
+                onChange={event => { setGistId(event.target.value); setConfirm(false) }} />
+              <p className="text-xs text-muted-foreground">{t(invalidId ? 'sync.invalidId' : 'sync.gistHint')}</p>
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleSave} disabled={!token.trim()}>
-                {t('sync.saveConfig')}
-              </Button>
-              {isConfigured && (
-                <>
-                  <Button variant="secondary" onClick={handlePush}>
-                    {t('sync.push')}
-                  </Button>
-                  <Button variant="secondary" onClick={handlePull}>
-                    {t('sync.pull')}
-                  </Button>
-                  <Button variant="destructive" onClick={handleClear} size="sm">
-                    {t('sync.clear')}
-                  </Button>
-                </>
-              )}
-            </div>
-
-            {isConfigured && (
-              <div className="pt-2">
-                <Button variant="outline" size="sm" onClick={handleGenerateCode}>
-                  {t('sync.generateCode')}
-                </Button>
-                {pairCode && (
-                  <div className="mt-2 space-y-1">
-                    <label htmlFor="sync-pair-code" className="text-xs text-muted-foreground">{t('sync.pairCode')}</label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="sync-pair-code"
-                        name="sync-pair-code"
-                        autoComplete="off"
-                        type={showPairCode ? 'text' : 'password'}
-                        value={pairCode}
-                        readOnly
-                        className="text-xs font-mono flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowPairCode(!showPairCode)}
-                      >
-                        {showPairCode ? t('sync.hide') : t('sync.show')}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
+            {id && !invalidId && (
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" className="mt-1" checked={confirm} onChange={event => setConfirm(event.target.checked)} />
+                {t('sync.confirmOverwrite')}
+              </label>
             )}
-          </form>
-        )}
-
-        {tab === 'pair' && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="sync-enter-code" className="text-sm font-medium">{t('sync.enterCode')}</label>
-              <textarea
-                id="sync-enter-code"
-                name="sync-enter-code"
-                autoComplete="off"
-                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-base font-mono sm:text-sm"
-                value={pairCode}
-                onChange={e => setPairCode(e.target.value)}
-                placeholder={t('sync.codePlaceholder')}
-              />
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={() => void run('push')} disabled={!ready}>{t('sync.push')}</Button>
+              <Button type="button" variant="secondary" onClick={() => void run('pull')} disabled={!ready || !id}>{t('sync.pull')}</Button>
+              <Button type="button" variant="outline" onClick={() => void run('clear')} disabled={locked}>{t('sync.clear')}</Button>
             </div>
-            <Button onClick={handleDecodeCode} disabled={!pairCode}>
-              {t('sync.connect')}
-            </Button>
-          </div>
-        )}
-
-        {status && (
-          <div role="status" className="mt-4 text-sm text-muted-foreground border-t pt-3 [overflow-wrap:anywhere]">
-            {status}
-          </div>
-        )}
+          </fieldset>
+        </form>
+        {status && <p role="status" className="mt-4 border-t pt-3 text-sm [overflow-wrap:anywhere]">{t(`sync.${status}`, { length: MIN_NEW_PASSWORD_LENGTH })}</p>}
       </DialogContent>
     </Dialog>
   )

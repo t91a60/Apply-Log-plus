@@ -1,111 +1,39 @@
 # Apply Log+
 
-[![CI](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml/badge.svg)](https://github.com/t91a60/Apply-Log-plus/actions/workflows/main.yml)
-[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[English](README.md) · [GitHub Pages](https://t91a60.github.io/Apply-Log-plus/) · [Bezpieczeństwo](SECURITY.md)
 
-Tracker aplikacji o pracę z lokalnym zapisem i opcjonalną szyfrowaną synchronizacją.
+Apply Log+ to dziennik rekrutacji działający w przeglądarce. Zapisuj firmy, stanowiska, linki i notatki, sprawdzaj historię etapów, a w razie zmiany przeglądarki zabierz dane ze sobą.
 
-Rejestruj aplikacje o pracę lokalnie w IndexedDB. Opcjonalna synchronizacja wysyła zaszyfrowaną migawkę do GitHub Gist; import ofert z URL korzysta z zewnętrznych usług proxy.
+- **Rekrutacje:** Dodawaj i edytuj zgłoszenia oraz własne etapy. Wyszukuj oferty, filtruj według etapu i sprawdzaj statystyki.
+- **Tryb lokalny:** Do prowadzenia dziennika nie potrzebujesz konta ani tokena. Wydanie produkcyjne otwiera się offline po pierwszej wizycie online, jeśli przeglądarka zdąży pobrać pliki.
+- **Kopia zapasowa:** Eksportuj JSON z historią i własnymi etapami. CSV służy do analizy w arkuszu, nie do przywracania.
+- **Opcjonalny Gist:** Ręcznie przesyłaj zaszyfrowaną migawkę między urządzeniami lub przenieś plik JSON bez konta GitHub.
 
-> [Otwórz aplikację](https://t91a60.github.io/Apply-Log-plus/) · [English version](README.md) · [Uwagi bezpieczeństwa](SECURITY.md)
+## Kopia i przywracanie
 
----
+Wybierz **Eksportuj JSON** i zapisz plik w miejscu, do którego masz dostęp. W drugiej przeglądarce wybierz **Przywróć JSON**, wskaż plik i sprawdź jego podsumowanie przed potwierdzeniem. Przywrócenie zastępuje aplikacje i własne etapy zamiast je scalać. Limit importu to 16 MiB.
 
-## Stan
+Dane lokalne należą do bieżącego profilu przeglądarki i adresu aplikacji. Wyczyszczenie danych witryny albo zmiana adresu lub profilu może pozbawić Cię do nich dostępu. Aplikacja nie szyfruje danych w IndexedDB ani plików JSON i CSV, dlatego przechowuj kopię w bezpiecznym miejscu.
 
-Beta, ocena z 2026-10-23. Testy lokalne i build przeszły. W audycie nie sprawdzono synchronizacji między urządzeniami ani zachowania offline w przeglądarce. [Wyniki i ograniczenia (EN)](docs/STATUS.md).
+## Przenoszenie zaszyfrowanej migawki przez Gist
 
-## Funkcje
+1. Najpierw wyeksportuj lokalny JSON. Utwórz dedykowany, wygasający token GitHub wyłącznie do Gistów. Dla tokena fine-grained jest to uprawnienie użytkownika **Gists: write** ([dokumentacja API Gist](https://docs.github.com/en/rest/gists/gists)).
+2. Otwórz **Synchronizacja**, wpisz token i mocne, unikalne hasło o długości co najmniej 16 znaków. Zostaw puste **Gist ID** i wybierz **Wyślij do Gista**. Zachowaj hasło w menedżerze haseł.
+3. Na innym urządzeniu wpisz osobno ID Gista, odpowiedni token i to samo hasło. Jeśli są tam lokalne dane, zrób ich kopię. Potwierdź zastąpienie i wybierz **Pobierz z Gista**.
 
-- Zapis aplikacji w IndexedDB i edycja własnych etapów rekrutacji.
-- Polski i angielski interfejs.
-- Ostrzeżenia o powtórzonej parze firma/stanowisko.
-- Alerty o braku aktualizacji przez 14+ dni lub odpowiedzi przez 30+ dni.
-- Historia etapów z datami i liczniki według statusu rekrutacji.
-- Import danych oferty z URL przez zewnętrzne proxy.
-- Eksport rekordów do JSON i CSV.
-- Jasny lub ciemny motyw zgodny z ustawieniami systemu.
-- Wysyłanie i pobieranie migawek Gist szyfrowanych AES-256-GCM i PBKDF2.
-- Przenoszenie konfiguracji kodem base64. Kod zawiera token i hasło szyfrowania; nie wygasa i można go użyć ponownie.
+Nie ma automatycznej synchronizacji ani scalania zmian. Wysłanie na istniejący ID zastępuje migawkę Gista; pobranie zastępuje dane lokalne. Nie wysyłaj równolegle z kilku urządzeń. Limit zaszyfrowanej migawki to 1 MB. [Ukryty Gist nie jest prywatny](https://docs.github.com/en/get-started/writing-on-github/editing-and-sharing-content-with-gists/creating-gists): każdy, kto zna adres, może odczytać zaszyfrowany plik.
 
----
-
-## Stack technologiczny
-
-| Warstwa | Wybór |
-|---|---|
-| **Framework** | React 19 + TypeScript |
-| **Build** | Vite 8 |
-| **Styling** | Tailwind CSS v4 + shadcn/ui |
-| **Storage** | Dexie.js (IndexedDB) |
-| **Dostęp do danych i cache** | TanStack Query |
-| **Walidacja** | Zod |
-| **i18n** | i18next + react-i18next |
-| **Sync** | GitHub Gist API + AES-256-GCM E2EE |
-| **Testy** | Vitest (unit), Playwright (E2E) |
-| **Linting** | oxlint |
-
----
+Starsze kody parowania zawierały poświadczenia. Jeśli korzystasz ze starszej wersji, przeczytaj [instrukcję rotacji tokena i hasła](SECURITY.md#legacy-pairing-and-credential-rotation).
 
 ## Uruchomienie lokalne
 
+Wymagane są Node.js 24 i pnpm 11. Zwykłe uruchomienie nie wymaga pliku `.env`, tokena ani konta.
+
 ```bash
-git clone https://github.com/t91a60/Apply-Log-plus.git
-cd Apply-Log-plus
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-### Wymagania
+Otwórz `http://localhost:5173/Apply-Log-plus/`. Do testu trybu offline użyj `pnpm build`, a następnie `pnpm preview`. Polecenia weryfikacji i scenariusze są w [CONTRIBUTING.md](CONTRIBUTING.md) i [FLOWS.md](FLOWS.md).
 
-- **Node.js 24 i pnpm 11**, zgodnie z konfiguracją CI. Niższe minima w `package.json` nie gwarantują zgodności wszystkich narzędzi.
-
-## Ograniczenia i testy
-
-- Pobranie Gista usuwa i zastępuje lokalne aplikacje oraz własne etapy. Brak scalania konfliktów i wspólnej transakcji obu tabel. Najpierw wykonaj eksport kopii.
-- IndexedDB przechowuje rekordy lokalnie, ale aplikacja nie ma service workera do zapisu plików strony w cache. Ponowne otwarcie bez internetu nie jest gwarantowane.
-- Token GitHub jest zapisany w IndexedDB bez szyfrowania aplikacyjnego. Szyfrowanie danych synchronizacji nie chroni tokena przed skryptami z tego samego originu.
-- Import URL wysyła adres oferty do `corsproxy.io` lub `api.allorigins.win` i może zawieść. Nie używaj prywatnych adresów ani linków zawierających tokeny.
-- Audyt: `pnpm test` PASS (117 testów), `pnpm build` PASS z ostrzeżeniem rozmiaru paczki, `pnpm lint` kod 0 z trzema ostrzeżeniami. Nie uruchomiono E2E, coverage ani rzeczywistej synchronizacji Gist.
-
----
-
-## Synchronizacja (E2EE)
-
-Sync wykorzystuje GitHub Gist jako warstwę transportową. Dane są **szyfrowane przed opuszczeniem przeglądarki**:
-
-1. Otwórz panel **Sync** w aplikacji
-2. Wpisz **GitHub Personal Access Token** (zakres: `gist`)
-3. Ustaw silne hasło szyfrowania. Aplikacja nie utrwala go w IndexedDB.
-4. Wyślij dane do niepublicznego Gista (`public: false`). Znajomość adresu pozwala go odczytać; ochronę treści zapewnia szyfrowanie.
-5. Na drugim urządzeniu wpisz ten sam token + hasło i pobierz
-
-**Kod parowania** zawiera token GitHub, hasło szyfrowania i opcjonalny identyfikator Gista w base64. **Nie jest zaszyfrowany**, nie ma wymuszonego wygaśnięcia i można go użyć ponownie. Nie wysyłaj go przez czat, e-mail, zrzut ekranu ani publiczne zgłoszenie. Przekazuj wyłącznie bezpośrednio między własnymi urządzeniami; aplikacja nie wymusza ograniczenia do tej samej sieci.
-
-> Hasło nie jest utrwalane w IndexedDB ani wysyłane jawnym tekstem do Gista synchronizacji, ale wygenerowany kod parowania zawiera je wprost. Przy wycieku kodu unieważnij zawarty w nim token i potraktuj hasło jako ujawnione. Utrata hasła uniemożliwia odszyfrowanie zsynchronizowanej migawki.
-
----
-
-## Struktura projektu
-
-```
-src/
-  __tests__/        # Testy jednostkowe
-  components/
-    applications/   # ApplicationTable, ApplicationDialog, StatsCards, StageBadge, Timeline
-    sync/           # SyncPanel
-    ui/             # shadcn/ui (button, input, dialog, badge)
-  db/               # Schemat Dexie i baza danych
-  hooks/            # Hooki TanStack Query
-  i18n/             # Tłumaczenia (en, pl)
-  lib/              # Funkcje pomocnicze (cn, export)
-  sync/             # Szyfrowanie (AES-GCM), sync manager, API Gist
-  App.tsx           # Komponent główny
-  main.tsx          # Punkt wejścia
-```
-
----
-
-## Licencja
-
-MIT. Zobacz [LICENSE](LICENSE).
+Licencja: [MIT](LICENSE).

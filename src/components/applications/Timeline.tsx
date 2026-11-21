@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { StageTimelineEntry } from '@/db/schema'
-import { defaultStageLabels } from '@/db/schema'
+import { getStageLabel } from '@/db/schema'
 
 interface Props {
   timeline: StageTimelineEntry[]
@@ -24,13 +24,6 @@ export function Timeline({ timeline, lang }: Props) {
     })
   }
 
-  function stageLabel(stage: string) {
-    if (stage in defaultStageLabels) {
-      return defaultStageLabels[stage as keyof typeof defaultStageLabels][lang]
-    }
-    return stage
-  }
-
   return (
     <div className="space-y-0">
       <h4 className="text-sm font-medium mb-3">{t('application.timeline')}</h4>
@@ -45,7 +38,7 @@ export function Timeline({ timeline, lang }: Props) {
             </div>
             <div className="flex-1 pt-0.5">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{stageLabel(entry.stage)}</span>
+                <span className="text-sm font-medium">{getStageLabel(entry.stage, lang)}</span>
                 <span className="text-xs text-muted-foreground">{formatDate(entry.date)}</span>
               </div>
               {entry.note && (

@@ -105,7 +105,9 @@ test.describe('Apply Log+', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible()
   })
 
-  test('manages stages and opens both sync sections without a network request', async ({ page }) => {
+  test('manages stages and opens sync without a network request', async ({ page }) => {
+    const requests: string[] = []
+    page.on('request', request => { if (request.url().includes('api.github.com')) requests.push(request.url()) })
     await page.getByRole('button', { name: 'Zarządzaj etapami' }).click()
     await expect(page.getByRole('button', { name: 'Dodaj etap' })).toBeDisabled()
     await page.getByLabel('Nazwa nowego etapu', { exact: true }).fill('Testowy etap')
@@ -115,12 +117,11 @@ test.describe('Apply Log+', () => {
     await expect(page.getByText('Testowy etap', { exact: true })).not.toBeVisible()
     await page.getByRole('button', { name: 'Zamknij' }).click()
     await page.getByRole('button', { name: 'Synchronizacja', exact: true }).click()
-    await expect(page.getByRole('button', { name: 'Zapisz konfigurację' })).toBeDisabled()
-    await page.getByRole('button', { name: 'Paruj urządzenie' }).click()
-    await expect(page.getByRole('button', { name: 'Połącz' })).toBeDisabled()
-    await page.getByRole('button', { name: 'Konfiguracja' }).click()
+    await expect(page.getByRole('button', { name: 'Wyślij do Gista' })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Pobierz z Gista' })).toBeDisabled()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).not.toBeVisible()
+    expect(requests).toEqual([])
   })
 
   test('exports the saved application in both formats', async ({ page }) => {
@@ -133,6 +134,154 @@ test.describe('Apply Log+', () => {
       await page.getByRole('button', { name: label }).click()
       expect((await download).suggestedFilename()).toBe(filename)
     }
+  })
+
+  test('restores an actual JSON download with its custom stages and rejects invalid input', async ({ page }) => {
+    await addApplication(page, 'Kopia firmy')
+    await page.getByRole('button', { name: 'Zarządzaj etapami' }).click()
+    await page.getByLabel('Nazwa nowego etapu').fill('Etap kopii')
+    await page.getByRole('button', { name: 'Dodaj etap' }).click()
+    await expect(page.getByRole('dialog').getByText('Etap kopii', { exact: true })).toBeVisible()
+    await page.keyboard.press('Escape')
+    const download = page.waitForEvent('download')
+    await page.getByRole('button', { name: 'Eksportuj JSON' }).click()
+    const backup = await (await download).path()
+    await addApplication(page, 'Nowsza firma')
+    const input = page.locator('input[type=file]')
+    await input.setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{"applications":[]}') })
+    await expect(page.getByRole('alert')).toContainText('Nie udało się odczytać kopii')
+    await expect(page.getByRole('rowheader', { name: 'Nowsza firma' })).toBeVisible()
+    await input.setInputFiles(backup)
+    await expect(page.getByRole('dialog')).toContainText('1 aplikacji i 1 własnych etapów')
+    await page.getByRole('button', { name: 'Zastąp dane lokalne' }).click()
+    await expect(page.getByText('Przywrócono kopię.')).toBeVisible()
+    await expect(page.getByRole('rowheader', { name: 'Kopia firmy' })).toBeVisible()
+    await expect(page.getByRole('rowheader', { name: 'Nowsza firma' })).not.toBeVisible()
+    await page.getByRole('button', { name: 'Zarządzaj etapami' }).click()
+    await expect(page.getByRole('dialog').getByText('Etap kopii', { exact: true })).toBeVisible()
+  })
+
+  test('reopens offline and still reads, creates, edits and deletes records', async ({ page, context }) => {
+    await addApplication(page, 'Przed odłączeniem')
+    await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller))
+    await context.setOffline(true)
+    try {
+      await page.reload()
+      await expect(page.getByRole('rowheader', { name: 'Przed odłączeniem' })).toBeVisible()
+      await addApplication(page, 'Bez internetu')
+      const localRow = page.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'Bez internetu' }) })
+      await localRow.getByRole('button', { name: 'Edytuj aplikację' }).click()
+      await page.getByLabel('Stanowisko', { exact: true }).fill('Zmienione offline')
+      await page.getByRole('button', { name: 'Zapisz', exact: true }).click()
+      await expect(page.getByRole('dialog')).not.toBeVisible()
+      await expect(page.getByRole('cell', { name: 'Zmienione offline' })).toBeVisible()
+      await page.reload()
+      await expect(page.getByRole('cell', { name: 'Zmienione offline' })).toBeVisible()
+      page.once('dialog', dialog => dialog.accept())
+      await localRow.getByRole('button', { name: 'Usuń', exact: true }).click()
+      await expect(localRow).not.toBeVisible()
+    } finally {
+      await context.setOffline(false)
+    }
+  })
+
+  test('stores a link without contacting the offer website and persists English preference', async ({ page }) => {
+    const origin = new URL(page.url()).origin
+    const external: string[] = []
+    await page.route('**/*', async route => {
+      if (new URL(route.request().url()).origin === origin) return route.continue()
+      external.push(route.request().url())
+      await route.abort()
+    })
+    await page.getByRole('button', { name: 'Dodaj aplikację' }).click()
+    await page.getByLabel('Firma', { exact: true }).fill('Firma z linkiem')
+    await page.getByLabel('Stanowisko', { exact: true }).fill('Tester')
+    await page.locator('input[type=url]').fill('http://jobs.example.test/offer')
+    await page.getByRole('button', { name: 'Zapisz', exact: true }).click()
+    await expect(page.getByRole('link', { name: 'Otwórz ofertę' })).toHaveAttribute('href', 'http://jobs.example.test/offer')
+    expect(external).toEqual([])
+    await page.locator('header select').selectOption('en')
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'Add Application' })).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  })
+
+  test.describe('mocked GitHub API', () => {
+    // Playwright routes run in the page; bypass service workers in this mock-only group.
+    test.use({ serviceWorkers: 'block' })
+
+    test('round-trips an encrypted snapshot between two separate browser contexts with a mocked Gist', async ({ page, browser }) => {
+      const gistId = 'abcd1234'
+      const endpoint = 'https://api.github.com/gists'
+      let content = ''
+      let truncated = false
+      const fileName = 'apply-log-plus-data.json'
+      const cors = {
+        'access-control-allow-origin': '*',
+        'access-control-allow-methods': 'GET, POST, OPTIONS',
+        'access-control-allow-headers': 'authorization, content-type, x-github-api-version',
+      }
+      await page.route(endpoint, async route => {
+        if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
+        expect(route.request().method()).toBe('POST')
+        const body = route.request().postDataJSON()
+        expect(body.public).toBe(false)
+        content = body.files[fileName].content
+        expect(content).not.toContain('Firma źródłowa')
+        await route.fulfill({ headers: cors, json: { id: gistId } })
+      })
+      await addApplication(page, 'Firma źródłowa')
+      await page.getByRole('button', { name: 'Synchronizacja' }).click()
+      await page.getByLabel('GitHub Personal Access Token').fill('test-token')
+      await page.getByLabel('Hasło szyfrowania').fill('sufficient test passphrase')
+      await page.getByRole('button', { name: 'Wyślij do Gista' }).click()
+      await expect(page.getByRole('dialog').getByRole('status')).toHaveText('Dane wysłane do Gista')
+      await page.keyboard.press('Escape')
+      await page.getByRole('button', { name: 'Synchronizacja' }).click()
+      await expect(page.getByLabel('Gist ID')).toHaveValue(gistId)
+      await expect(page.getByLabel('GitHub Personal Access Token')).toHaveValue('')
+      await expect(page.getByLabel('Hasło szyfrowania')).toHaveValue('')
+
+      const other = await browser.newContext({ serviceWorkers: 'block' })
+      try {
+        const second = await other.newPage()
+        await other.route(`${endpoint}/${gistId}`, route => route.request().method() === 'OPTIONS'
+          ? route.fulfill({ status: 204, headers: cors })
+          : route.fulfill({ headers: cors, json: { public: false, files: { [fileName]: { content, truncated } } } }))
+        await second.goto(page.url())
+        await addApplication(second, 'Firma lokalna')
+        await second.getByRole('button', { name: 'Synchronizacja' }).click()
+        await second.getByLabel('GitHub Personal Access Token').fill('test-token')
+        await second.getByLabel('Hasło szyfrowania').fill('incorrect test passphrase')
+        await second.getByLabel('Gist ID').fill(gistId)
+        const sync = second.getByRole('dialog')
+        const pull = sync.getByRole('button', { name: 'Pobierz z Gista' })
+        await expect(pull).toBeDisabled()
+        await sync.getByRole('checkbox').check()
+        await pull.click()
+        await expect(sync.getByRole('status')).toContainText('Nie zastąpiono żadnych danych')
+        await second.getByLabel('Hasło szyfrowania').fill('sufficient test passphrase')
+        truncated = true
+        await sync.getByRole('checkbox').check()
+        await pull.click()
+        await expect(sync.getByRole('status')).toContainText('Nie udało się zsynchronizować')
+        await second.keyboard.press('Escape')
+        await expect(second.getByRole('rowheader', { name: 'Firma lokalna' })).toBeVisible()
+        truncated = false
+        await second.getByRole('button', { name: 'Synchronizacja' }).click()
+        await second.getByLabel('GitHub Personal Access Token').fill('test-token')
+        await second.getByLabel('Hasło szyfrowania').fill('sufficient test passphrase')
+        await second.getByLabel('Gist ID').fill(gistId)
+        await sync.getByRole('checkbox').check()
+        await pull.click()
+        await expect(sync.getByRole('status')).toHaveText('Dane pobrane z Gista')
+        await second.keyboard.press('Escape')
+        await expect(second.getByRole('rowheader', { name: 'Firma źródłowa' })).toBeVisible()
+        await expect(second.getByRole('rowheader', { name: 'Firma lokalna' })).not.toBeVisible()
+      } finally {
+        await other.close()
+      }
+    })
   })
 
   for (const colorScheme of ['light', 'dark'] as const) {

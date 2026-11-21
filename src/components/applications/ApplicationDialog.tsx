@@ -1,18 +1,18 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DefaultStages, defaultStageLabels, type Application, type CustomStage } from '@/db/schema'
+import { DefaultStages, getStageLabel, type Application, type CustomStage } from '@/db/schema'
 import { useDuplicateDetection } from '@/hooks/useDuplicateDetection'
-import { fetchUrlMetadata, type UrlMetadata } from '@/lib/urlMetadata'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Timeline } from './Timeline'
+import { getOfferHref } from '@/lib/offerUrl'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: Partial<Application>) => void
+  onSubmit: (data: Application) => void | Promise<unknown>
   initialData?: Application | null
   customStages?: CustomStage[]
   allApplications?: Application[]
@@ -30,11 +30,8 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
   const [notes, setNotes] = useState('')
   const [location, setLocation] = useState('')
   const [salary, setSalary] = useState('')
-  const [importingUrl, setImportingUrl] = useState(false)
-  const [importError, setImportError] = useState(false)
-  const [importedMeta, setImportedMeta] = useState<UrlMetadata | null>(null)
-  const [logoError, setLogoError] = useState(false)
-  const [imageError, setImageError] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const duplicate = useDuplicateDetection(
     allApplications,
@@ -43,14 +40,7 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
     initialData?.id,
   )
 
-  const allStages = [...DefaultStages, ...customStages.map(s => s.name)]
-
-  function stageLabel(s: string) {
-    if (s in defaultStageLabels) {
-      return defaultStageLabels[s as keyof typeof defaultStageLabels][lang]
-    }
-    return s
-  }
+  const allStages = [...new Set([...DefaultStages, ...customStages.map(s => s.name), stage])]
 
   useEffect(() => {
     if (initialData) {
@@ -70,87 +60,57 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
       setLocation('')
       setSalary('')
     }
-    setImportError(false)
-    setImportedMeta(null)
-    setLogoError(false)
-    setImageError(false)
+    setError('')
   }, [initialData, open])
 
-  const handleImportUrl = useCallback(async () => {
-    if (!url.trim()) return
-    setImportError(false)
-    setImportedMeta(null)
-    setLogoError(false)
-    setImageError(false)
-    setImportingUrl(true)
-    try {
-      const result = await fetchUrlMetadata(url.trim())
-      if (!result.success) {
-        setImportError(true)
-        return
-      }
-      const meta = result.data
-      setImportedMeta(meta)
-
-      const companyVal = meta.company ?? meta.siteName
-      if (companyVal && !company) setCompany(companyVal)
-
-      if (meta.title && !role) {
-        setRole(meta.title.replace(/ - .*| \| .*| – .*/g, '').trim())
-      }
-
-      if (meta.location && !location) setLocation(meta.location)
-      if (meta.salary && !salary) setSalary(meta.salary)
-    } finally {
-      setImportingUrl(false)
-    }
-  }, [url, role, company, location, salary])
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!company.trim() || !role.trim()) return
+    if (saving || !company.trim() || !role.trim()) return
+    const link = url.trim()
+    if (link && !getOfferHref(link) && link !== initialData?.url) {
+      setError('urlError')
+      return
+    }
 
     const now = new Date().toISOString()
-    const data: Partial<Application> = {
+    const data: Application = {
+      id: initialData?.id,
       company: company.trim(),
       role: role.trim(),
-      url: url.trim(),
+      url: link,
       currentStage: stage,
       notes: notes.trim(),
       location: location.trim(),
       salary: salary.trim(),
       updatedAt: now,
+      createdAt: initialData?.createdAt ?? now,
+      timeline: initialData?.timeline ?? [],
     }
 
-    if (isEditing && initialData?.id) {
-      data.id = initialData.id
-      data.createdAt = initialData.createdAt
-      data.timeline = initialData.timeline
-
-      if (stage !== initialData.currentStage) {
-        data.timeline = [
-          ...initialData.timeline,
-          { stage, date: now },
-        ]
-      }
+    if (!initialData || stage !== initialData.currentStage) {
+      data.timeline = [...data.timeline, { stage, date: now }]
     }
 
-    if (!isEditing) {
-      data.timeline = [{ stage, date: now }]
-      data.createdAt = now
+    setSaving(true)
+    setError('')
+    try {
+      await onSubmit(data)
+      onOpenChange(false)
+    } catch {
+      setError('saveError')
+    } finally {
+      setSaving(false)
     }
-
-    onSubmit(data)
-    onOpenChange(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={next => { if (!saving) onOpenChange(next) }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEditing ? t('application.edit') : t('application.add')}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={event => void handleSubmit(event)}>
+          <fieldset disabled={saving} className="space-y-4">
           {duplicate && !isEditing && (
             <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
               {t('application.duplicateWarning', { company: duplicate.company, role: duplicate.role })}
@@ -170,49 +130,13 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-2">
               <label htmlFor="add-url" className="text-sm font-medium">{t('application.url')}</label>
-              <div className="flex gap-2">
-                <Input id="add-url" name="url" autoComplete="url" value={url} onChange={e => setUrl(e.target.value)} type="url" />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleImportUrl}
-                  disabled={importingUrl || !url.trim()}
-                >
-                  {importingUrl ? t('application.importing') : t('application.importMeta')}
-                </Button>
-              </div>
-              {importError && (
-                <p role="alert" className="text-sm text-red-700 dark:text-red-400 mt-1">
-                  {t('application.importError')}
-                </p>
-              )}
-              {importedMeta && (
-                <div className="flex gap-2 mt-2">
-                  {importedMeta.companyLogo && !logoError && (
-                    <img
-                      src={importedMeta.companyLogo}
-                      alt=""
-                      className="h-8 w-8 rounded object-contain border"
-                      onError={() => setLogoError(true)}
-                    />
-                  )}
-                  {importedMeta.image && !imageError && (
-                    <img
-                      src={importedMeta.image}
-                      alt=""
-                      className="h-8 w-16 rounded object-cover border"
-                      onError={() => setImageError(true)}
-                    />
-                  )}
-                </div>
-              )}
+              <Input id="add-url" name="url" autoComplete="url" value={url} onChange={e => setUrl(e.target.value)} type="url" />
             </div>
             <div className="space-y-2">
               <label htmlFor="add-stage" className="text-sm font-medium">{t('application.stage')}</label>
               <Select id="add-stage" name="stage" value={stage} onValueChange={setStage}>
                 {allStages.map(s => (
-                  <option key={s} value={s}>{stageLabel(s)}</option>
+                  <option key={s} value={s}>{getStageLabel(s, lang)}</option>
                 ))}
               </Select>
             </div>
@@ -243,12 +167,14 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
             <Timeline timeline={initialData.timeline} lang={lang} />
           )}
 
+          {error && <p role="alert" className="text-sm text-destructive">{t(`application.${error}`)}</p>}
           <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('application.cancel')}
             </Button>
             <Button type="submit">{t('application.save')}</Button>
           </div>
+          </fieldset>
         </form>
       </DialogContent>
     </Dialog>

@@ -1,40 +1,53 @@
-import { describe, it, expect } from 'vitest'
-import { generatePairingCode, decodePairingCode } from '@/sync/gist'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createGist, MAX_GIST_BYTES, readGist, updateGist } from '@/sync/gist'
 
-describe('pairing code', () => {
-  it('generates and decodes a pairing code', () => {
-    const config = {
-      token: 'ghp_test123',
-      gistId: 'abc123',
-      password: 'mypassword',
-    }
+const fileName = 'apply-log-plus-data.json'
+afterEach(() => vi.unstubAllGlobals())
 
-    const code = generatePairingCode(config)
-    expect(code).toBeTruthy()
-    expect(typeof code).toBe('string')
-
-    const decoded = decodePairingCode(code)
-    expect(decoded.token).toBe(config.token)
-    expect(decoded.gistId).toBe(config.gistId)
-    expect(decoded.password).toBe(config.password)
+describe('Gist API', () => {
+  it('creates an unlisted snapshot and keeps the credential in the authorization header', async () => {
+    const fetch = vi.fn().mockResolvedValue(Response.json({ id: 'abc123' }))
+    vi.stubGlobal('fetch', fetch)
+    await expect(createGist('token', 'encrypted')).resolves.toBe('abc123')
+    const [url, options] = fetch.mock.calls[0]
+    expect(url).toBe('https://api.github.com/gists')
+    expect(options).toMatchObject({ credentials: 'omit', redirect: 'error', headers: { Authorization: 'Bearer token' } })
+    expect(JSON.parse(options.body)).toMatchObject({ public: false, files: { [fileName]: { content: 'encrypted' } } })
+    expect(options.body).not.toContain('token')
   })
 
-  it('generates code without optional gistId', () => {
-    const config = {
-      token: 'ghp_test',
-      gistId: undefined,
-      password: 'pass',
-    }
-
-    const code = generatePairingCode(config)
-    const decoded = decodePairingCode(code)
-    expect(decoded.token).toBe(config.token)
-    expect(decoded.gistId).toBeUndefined()
-    expect(decoded.password).toBe(config.password)
+  it('updates only after checking the target is an existing unlisted snapshot', async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(Response.json({ public: false, files: { [fileName]: { content: 'previous' } } }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+    vi.stubGlobal('fetch', fetch)
+    const verify = vi.fn()
+    await updateGist('token', 'abc123', 'next', verify)
+    expect(verify).toHaveBeenCalledWith('previous')
+    expect(fetch.mock.calls.map(([, options]) => options.method)).toEqual(['GET', 'PATCH'])
   })
 
-  it('throws on invalid code', () => {
-    expect(() => decodePairingCode('invalid-base64!')).toThrow()
-    expect(() => decodePairingCode('')).toThrow()
+  it.each([
+    { public: true, files: { [fileName]: { content: 'encrypted' } } },
+    { public: false, files: { [fileName]: { content: 'partial', truncated: true } } },
+    { public: false, files: {} },
+  ])('rejects public, truncated, or unrelated snapshots', async payload => {
+    const fetch = vi.fn().mockResolvedValue(Response.json(payload))
+    vi.stubGlobal('fetch', fetch)
+    await expect(updateGist('token', 'abc123', 'new snapshot', vi.fn())).rejects.toThrow()
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects invalid identifiers and oversized writes before making a request', async () => {
+    const fetch = vi.fn()
+    vi.stubGlobal('fetch', fetch)
+    await expect(readGist('token', 'not-an-id')).rejects.toThrow('Invalid Gist ID')
+    await expect(createGist('token', 'x'.repeat(MAX_GIST_BYTES + 1))).rejects.toThrow('too large')
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('does not expose an upstream error body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('server response body', { status: 403 })))
+    await expect(readGist('token', 'abc')).rejects.toThrow(/^Gist request failed \(403\)$/)
   })
 })

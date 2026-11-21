@@ -1,10 +1,10 @@
-import i18n from 'i18next'
+import i18n, { type i18n as I18n } from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
-const resources = {
+export const resources = {
   en: {
     translation: {
-      app: { title: 'Apply Log+' },
+      app: { title: 'Apply Log+', language: 'Language' },
       common: { close: 'Close', retry: 'Try again' },
       application: {
         loading: 'Loading applications...',
@@ -20,7 +20,6 @@ const resources = {
         hideTimeline: 'Hide',
         newStageName: 'New stage name',
         addStage: 'Add stage',
-        importing: 'Importing...',
         add: 'Add Application',
         edit: 'Edit Application',
         delete: 'Delete',
@@ -29,6 +28,7 @@ const resources = {
         stage: 'Stage',
         date: 'Date',
         url: 'Link to offer',
+        openOffer: 'Open offer',
         notes: 'Notes',
         location: 'Location',
         salary: 'Salary',
@@ -42,14 +42,25 @@ const resources = {
         timeline: 'Timeline',
         manageStages: 'Manage Stages',
         newStagePlaceholder: 'New stage name...',
-        importMeta: 'Import',
-        importError: 'Could not fetch preview from this URL. Fill in the details manually.',
+        urlError: 'Enter an HTTP or HTTPS link.',
+        saveError: 'Could not save. Your changes are still in the form.',
+        deleteError: 'Could not delete the item.',
+        stageError: 'Could not add the stage. Check whether the name is already in use.',
         duplicateWarning: 'This company and role already exist in your list ({{company}}, {{role}}).',
         repostedWarning: 'Found {{count}} job postings that may be reposted (same company + role appears multiple times).',
         staleWarning: '{{count}} application(s) have not been updated in over 14 days.',
         ghostedWarning: '{{count}} application(s) have not heard back in over 30 days. Consider marking as Ghosted.',
         exportJson: 'Export JSON',
         exportCsv: 'Export CSV',
+      },
+      backup: {
+        open: 'Restore JSON',
+        confirm: 'This backup has {{applications}} applications and {{stages}} custom stages. Restoring replaces both local lists. Cancel to export your current data first.',
+        apply: 'Replace local data',
+        invalid: 'Could not read this backup. Choose an Apply Log+ JSON export no larger than 16 MiB.',
+        restoreError: 'Restore failed or local data changed. Your current data was not replaced.',
+        restored: 'Backup restored.',
+        exportError: 'Could not export the local data.',
       },
       stage: {
         Applied: 'Applied',
@@ -75,39 +86,30 @@ const resources = {
       },
       sync: {
         title: 'Sync',
-        config: 'Configuration',
-        pair: 'Pair Device',
+        description: 'Transfer an encrypted snapshot, not individual changes. Export a JSON backup before syncing.',
         password: 'Encryption Password',
-        passwordHint: 'Enter a strong password',
-        passwordSessionHint: 'Not saved. Enter it again each session.',
-        passwordRequired: 'Password is required for this operation.',
-        tokenHint: 'Minimal scope: gist',
-        optional: 'optional',
-        saveConfig: 'Save Config',
+        tokenHint: 'Use a token with only gist access. The app does not save the token or password.',
+        gistHint: 'Leave blank to create an unlisted Gist that anyone with the link can read. On a second device, enter its ID, token and passphrase separately.',
+        invalidId: 'Enter the Gist ID, not the full URL.',
+        confirmOverwrite: 'I understand that push replaces the Gist snapshot and pull replaces the local data. There is no merge.',
         push: 'Push to Gist',
         pull: 'Pull from Gist',
         clear: 'Clear Config',
-        show: 'Show',
-        hide: 'Hide',
-        generateCode: 'Generate Pairing Code',
-        pairCode: 'Pairing code: contains your access data in plain text. Only share directly between your own devices (never via chat/email/screenshot).',
-        enterCode: 'Enter pairing code from another device',
-        codePlaceholder: 'Paste pairing code here...',
-        connect: 'Connect',
-        configSaved: 'Configuration saved',
         configCleared: 'Configuration cleared',
         syncing: 'Syncing...',
         pushSuccess: 'Data pushed to Gist successfully',
         pullSuccess: 'Data pulled from Gist successfully',
-        pairSuccess: 'Device paired successfully',
-        invalidCode: 'Invalid pairing code',
-        error: 'Sync error',
+        error: 'Sync failed. Check your network, token, and Gist ID before retrying.',
+        invalidSnapshot: 'Could not decrypt or validate this snapshot. No data was replaced.',
+        shortPassword: 'Use a unique passphrase of at least {{length}} characters for a new snapshot.',
+        tooLarge: 'This snapshot is too large for Gist sync. Export it as JSON instead.',
+        localChanged: 'Local data changed while downloading. Nothing was replaced; export a backup before retrying.',
       },
     },
   },
   pl: {
     translation: {
-      app: { title: 'Apply Log+' },
+      app: { title: 'Apply Log+', language: 'Język' },
       common: { close: 'Zamknij', retry: 'Spróbuj ponownie' },
       application: {
         loading: 'Wczytywanie aplikacji...',
@@ -125,7 +127,6 @@ const resources = {
         hideTimeline: 'Ukryj',
         newStageName: 'Nazwa nowego etapu',
         addStage: 'Dodaj etap',
-        importing: 'Importowanie...',
         add: 'Dodaj aplikację',
         edit: 'Edytuj aplikację',
         delete: 'Usuń',
@@ -134,6 +135,7 @@ const resources = {
         stage: 'Etap',
         date: 'Data',
         url: 'Link do oferty',
+        openOffer: 'Otwórz ofertę',
         notes: 'Notatki',
         location: 'Lokalizacja',
         salary: 'Wynagrodzenie',
@@ -147,14 +149,25 @@ const resources = {
         timeline: 'Historia',
         manageStages: 'Zarządzaj etapami',
         newStagePlaceholder: 'Nazwa nowego etapu...',
-        importMeta: 'Importuj',
-        importError: 'Nie udało się pobrać podglądu ze strony. Uzupełnij dane ręcznie.',
+        urlError: 'Wpisz adres HTTP lub HTTPS.',
+        saveError: 'Nie udało się zapisać. Zmiany pozostały w formularzu.',
+        deleteError: 'Nie udało się usunąć wpisu.',
+        stageError: 'Nie udało się dodać etapu. Sprawdź, czy ta nazwa nie jest już używana.',
         duplicateWarning: 'Ta firma i stanowisko już istnieją na liście ({{company}}, {{role}}).',
         repostedWarning: 'Znaleziono {{count}} ofert, które mogą być ponownie wystawione (ta sama firma + stanowisko pojawia się wielokrotnie).',
         staleWarning: '{{count}} aplikacji nie było aktualizowanych od ponad 14 dni.',
         ghostedWarning: '{{count}} aplikacji nie otrzymało odpowiedzi od ponad 30 dni. Rozważ oznaczenie jako Ghosted.',
         exportJson: 'Eksportuj JSON',
         exportCsv: 'Eksportuj CSV',
+      },
+      backup: {
+        open: 'Przywróć JSON',
+        confirm: 'Kopia zawiera {{applications}} aplikacji i {{stages}} własnych etapów. Przywrócenie zastąpi obie lokalne listy. Anuluj, jeśli chcesz najpierw wyeksportować aktualne dane.',
+        apply: 'Zastąp dane lokalne',
+        invalid: 'Nie udało się odczytać kopii. Wybierz plik JSON z Apply Log+ o rozmiarze do 16 MiB.',
+        restoreError: 'Nie udało się przywrócić kopii lub dane zmieniły się w międzyczasie. Nie zastąpiono aktualnych danych.',
+        restored: 'Przywrócono kopię.',
+        exportError: 'Nie udało się wyeksportować danych lokalnych.',
       },
       stage: {
         Applied: 'Aplikowano',
@@ -180,41 +193,48 @@ const resources = {
       },
       sync: {
         title: 'Synchronizacja',
-        config: 'Konfiguracja',
-        pair: 'Paruj urządzenie',
+        description: 'Przenoś zaszyfrowaną migawkę, a nie pojedyncze zmiany. Przed synchronizacją wyeksportuj kopię JSON.',
         password: 'Hasło szyfrowania',
-        passwordHint: 'Wpisz silne hasło',
-        passwordSessionHint: 'Nie jest zapisywane. Wpisz je ponownie przy każdej sesji.',
-        passwordRequired: 'Hasło jest wymagane do tej operacji.',
-        tokenHint: 'Minimalny zakres: gist',
-        optional: 'opcjonalne',
-        saveConfig: 'Zapisz konfigurację',
+        tokenHint: 'Użyj tokena tylko z dostępem do Gistów. Aplikacja nie zapisuje tokena ani hasła.',
+        gistHint: 'Zostaw puste, by utworzyć ukryty Gist dostępny każdemu z linkiem. Na drugim urządzeniu podaj ID, token i hasło osobno.',
+        invalidId: 'Wpisz identyfikator Gista, nie cały adres.',
+        confirmOverwrite: 'Rozumiem, że wysłanie zastąpi migawkę Gista, a pobranie zastąpi lokalne dane. Nie ma scalania.',
         push: 'Wyślij do Gista',
         pull: 'Pobierz z Gista',
         clear: 'Wyczyść konfigurację',
-        show: 'Pokaż',
-        hide: 'Ukryj',
-        generateCode: 'Generuj kod parowania',
-        pairCode: 'Kod parowania: zawiera Twoje dane dostępowe w jawnej postaci. Udostępniaj wyłącznie bezpośrednio między własnymi urządzeniami (nigdy czatem/mailem/screenshotem).',
-        enterCode: 'Wpisz kod parowania z innego urządzenia',
-        codePlaceholder: 'Wklej kod parowania...',
-        connect: 'Połącz',
-        configSaved: 'Konfiguracja zapisana',
         configCleared: 'Konfiguracja wyczyszczona',
         syncing: 'Synchronizacja...',
         pushSuccess: 'Dane wysłane do Gista',
         pullSuccess: 'Dane pobrane z Gista',
-        pairSuccess: 'Urządzenie sparowane',
-        invalidCode: 'Nieprawidłowy kod parowania',
-        error: 'Błąd synchronizacji',
+        error: 'Nie udało się zsynchronizować. Sprawdź połączenie, token i identyfikator Gista.',
+        invalidSnapshot: 'Nie udało się odszyfrować lub zweryfikować migawki. Nie zastąpiono żadnych danych.',
+        shortPassword: 'Nowa migawka wymaga unikalnego hasła o długości co najmniej {{length}} znaków.',
+        tooLarge: 'Migawka jest za duża dla synchronizacji z Gistem. Wyeksportuj ją do pliku JSON.',
+        localChanged: 'Dane lokalne zmieniły się podczas pobierania. Niczego nie zastąpiono; wyeksportuj kopię przed ponowną próbą.',
       },
     },
   },
 }
 
+function preferredLanguage() {
+  try {
+    return localStorage.getItem('apply-log-plus-language') === 'en' ? 'en' : 'pl'
+  } catch {
+    return 'pl'
+  }
+}
+
+export function setLanguage(instance: I18n, lang: 'en' | 'pl') {
+  void instance.changeLanguage(lang)
+  document.documentElement.lang = lang
+  try { localStorage.setItem('apply-log-plus-language', lang) } catch { /* storage is optional */ }
+}
+
+const lang = preferredLanguage()
+if (typeof document !== 'undefined') document.documentElement.lang = lang
 void i18n.use(initReactI18next).init({
   resources,
-  lng: 'pl',
+  lng: lang,
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
 })

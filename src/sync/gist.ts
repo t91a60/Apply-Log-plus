@@ -1,107 +1,62 @@
-const GIST_API = 'https://api.github.com/gists'
+const API = 'https://api.github.com/gists'
+const FILENAME = 'apply-log-plus-data.json'
+export const MAX_GIST_BYTES = 1_000_000
 
-export interface GistFile {
-  filename: string
-  content: string
+export function isGistId(id: unknown): id is string {
+  return typeof id === 'string' && /^[0-9a-f]{1,64}$/i.test(id)
 }
 
-export interface SyncConfig {
-  token: string
-  gistId?: string
-  password: string
-}
-
-export async function createGist(token: string, files: GistFile[]): Promise<string> {
-  const fileMap: Record<string, { content: string }> = {}
-  for (const f of files) {
-    fileMap[f.filename] = { content: f.content }
-  }
-
-  const res = await fetch(GIST_API, {
-    method: 'POST',
+async function apiRequest(token: string, id?: string, method = 'GET', body?: object) {
+  if (id !== undefined && !isGistId(id)) throw new Error('Invalid Gist ID')
+  const response = await fetch(id ? `${API}/${id}` : API, {
+    method,
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'ApplyLogPlus',
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(body && { 'Content-Type': 'application/json' }),
     },
-    body: JSON.stringify({
-      description: 'Apply Log+ sync data',
-      public: false,
-      files: fileMap,
-    }),
+    body: body && JSON.stringify(body),
+    credentials: 'omit',
+    redirect: 'error',
+    signal: AbortSignal.timeout(20_000),
   })
-
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Gist creation failed: ${res.status} ${err}`)
-  }
-
-  const data = await res.json()
-  return data.id as string
+  if (!response.ok) throw new Error(`Gist request failed (${response.status})`)
+  return response
 }
 
-export async function updateGist(token: string, gistId: string, files: GistFile[]): Promise<void> {
-  const fileMap: Record<string, { content: string }> = {}
-  for (const f of files) {
-    fileMap[f.filename] = { content: f.content }
-  }
-
-  const res = await fetch(`${GIST_API}/${gistId}`, {
-    method: 'PATCH',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'ApplyLogPlus',
-    },
-    body: JSON.stringify({ files: fileMap }),
-  })
-
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Gist update failed: ${res.status} ${err}`)
-  }
+function filesFor(content: string) {
+  if (content.length > MAX_GIST_BYTES) throw new Error('Encrypted backup is too large for Gist')
+  return { [FILENAME]: { content } }
 }
 
-export async function readGist(token: string, gistId: string): Promise<Record<string, string>> {
-  const res = await fetch(`${GIST_API}/${gistId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'User-Agent': 'ApplyLogPlus',
-    },
+export async function createGist(token: string, content: string): Promise<string> {
+  const response = await apiRequest(token, undefined, 'POST', {
+    public: false,
+    description: 'Apply Log+ encrypted snapshot',
+    files: filesFor(content),
   })
-
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Gist read failed: ${res.status} ${err}`)
-  }
-
-  const data = await res.json()
-  const files: Record<string, string> = {}
-  for (const [name, file] of Object.entries(data.files as Record<string, { content: string }>)) {
-    files[name] = file.content
-  }
-
-  return files
+  const result = await response.json()
+  if (!isGistId(result?.id)) throw new Error('Invalid Gist response')
+  return result.id
 }
 
-export function generatePairingCode(config: SyncConfig): string {
-  const payload = JSON.stringify({
-    t: config.token,
-    g: config.gistId,
-    p: config.password,
-  })
-  return btoa(payload)
+export async function updateGist(
+  token: string, id: string, content: string, validatePrevious: (previous: string) => Promise<void>,
+): Promise<void> {
+  const files = filesFor(content)
+  // Refuse to overwrite an unrelated or public Gist, even if the token can edit it.
+  await validatePrevious(await readGist(token, id))
+  await apiRequest(token, id, 'PATCH', { files })
 }
 
-export function decodePairingCode(code: string): SyncConfig {
-  try {
-    const payload = JSON.parse(atob(code))
-    return {
-      token: payload.t,
-      gistId: payload.g,
-      password: payload.p,
-    }
-  } catch {
-    throw new Error('Invalid pairing code')
+export async function readGist(token: string, id: string): Promise<string> {
+  const response = await apiRequest(token, id)
+  const result = await response.json()
+  const file = result?.files?.[FILENAME]
+  if (result?.public !== false || !file || file.truncated || typeof file.content !== 'string' ||
+      !file.content || file.content.length > MAX_GIST_BYTES) {
+    throw new Error('Missing, public, or incomplete Gist snapshot')
   }
+  return file.content
 }

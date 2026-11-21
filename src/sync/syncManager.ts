@@ -1,114 +1,78 @@
 import { db } from '@/db/database'
+import { parseSnapshot, readLocalSnapshot, replaceLocalSnapshot } from '@/db/snapshot'
 import { encrypt, decrypt } from './encryption'
-import { createGist, updateGist, readGist } from './gist'
+import { createGist, updateGist, readGist, isGistId, MAX_GIST_BYTES } from './gist'
 
-const SYNC_CONFIG_KEY = 'syncConfig'
+const LEGACY_SECRET_KEYS = ['syncToken', 'syncConfig', 'syncPassword']
+export const MIN_NEW_PASSWORD_LENGTH = 16
 
-export interface SyncStorage {
-  token: string
-  gistId?: string
-}
-
-export interface SyncMeta {
-  lastSyncedAt: string | null
-  gistId: string | null
-  token: string | null
-}
-
-async function setSyncMeta(meta: SyncMeta): Promise<void> {
-  await db.table('meta').put({ key: SYNC_CONFIG_KEY, value: JSON.stringify(meta) }, SYNC_CONFIG_KEY)
-}
-
-export async function saveSyncConfig(storage: SyncStorage): Promise<void> {
-  await db.table('meta').put({
-    key: 'syncToken',
-    value: storage.token,
-  }, 'syncToken')
-
-  if (storage.gistId) {
-    await db.table('meta').put({
-      key: 'gistId',
-      value: storage.gistId,
-    }, 'gistId')
-  }
-
-  await setSyncMeta({
-    lastSyncedAt: null,
-    gistId: storage.gistId ?? null,
-    token: storage.token,
-  })
-}
-
-export async function loadSyncStorage(): Promise<SyncStorage | null> {
-  try {
-    const tokenEntry = await db.table('meta').get('syncToken') as { value: string } | undefined
-    if (!tokenEntry) return null
-    const gistEntry = await db.table('meta').get('gistId') as { value: string } | undefined
-    return {
-      token: tokenEntry.value,
-      gistId: gistEntry?.value,
-    }
-  } catch {
-    return null
+export class SyncError extends Error {
+  readonly reason: 'tooLarge' | 'invalidSnapshot' | 'localChanged' | 'shortPassword'
+  constructor(reason: SyncError['reason']) {
+    super(reason)
+    this.reason = reason
   }
 }
 
-export async function clearSyncConfig(): Promise<void> {
-  await db.table('meta').bulkDelete(['syncToken', 'gistId', SYNC_CONFIG_KEY])
+export async function removeLegacySyncSecrets() {
+  await db.meta.bulkDelete(LEGACY_SECRET_KEYS)
 }
 
-export async function pushToGist(password: string): Promise<void> {
-  const storage = await loadSyncStorage()
-  if (!storage?.token) throw new Error('Sync not configured')
+export async function loadGistId(): Promise<string> {
+  await removeLegacySyncSecrets()
+  const value = (await db.meta.get('gistId'))?.value
+  return isGistId(value) ? value : ''
+}
 
-  const applications = await db.applications.toArray()
-  const customStages = await db.customStages.toArray()
+export async function rememberGistId(gistId: string) {
+  if (!isGistId(gistId)) throw new Error('Invalid Gist ID')
+  await db.meta.put({ key: 'gistId', value: gistId })
+}
 
-  const payload = JSON.stringify({ applications, customStages })
+export async function clearSyncConfig() {
+  await db.meta.bulkDelete(['gistId', ...LEGACY_SECRET_KEYS])
+}
+
+export async function pushToGist(token: string, password: string, gistId?: string): Promise<string> {
+  if (!token || !password || (gistId !== undefined && !isGistId(gistId))) throw new Error('Invalid sync settings')
+  if (!gistId && password.trim().length < MIN_NEW_PASSWORD_LENGTH) throw new SyncError('shortPassword')
+  const payload = JSON.stringify(await readLocalSnapshot())
+  // The existing salt/nonce/tag layout adds 44 bytes before base64 encoding.
+  if (4 * Math.ceil((new TextEncoder().encode(payload).length + 44) / 3) > MAX_GIST_BYTES) {
+    throw new SyncError('tooLarge')
+  }
+  parseSnapshot(payload)
   const encrypted = await encrypt(payload, password)
-
-  if (storage.gistId) {
-    await updateGist(storage.token, storage.gistId, [
-      { filename: 'apply-log-plus-data.json', content: encrypted },
-    ])
+  if (gistId) {
+    await updateGist(token, gistId, encrypted, async previous => {
+      await decryptSnapshot(previous, password)
+    })
   } else {
-    const gistId = await createGist(storage.token, [
-      { filename: 'apply-log-plus-data.json', content: encrypted },
-    ])
-    await db.table('meta').put({ key: 'gistId', value: gistId }, 'gistId')
+    gistId = await createGist(token, encrypted)
   }
-
-  await setSyncMeta({
-    lastSyncedAt: new Date().toISOString(),
-    gistId: storage.gistId ?? null,
-    token: storage.token,
-  })
+  await rememberGistId(gistId)
+  return gistId
 }
 
-export async function pullFromGist(password: string): Promise<void> {
-  const storage = await loadSyncStorage()
-  if (!storage?.token || !storage.gistId) throw new Error('Sync not configured')
-
-  const files = await readGist(storage.token, storage.gistId)
-  const encrypted = files['apply-log-plus-data.json']
-  if (!encrypted) throw new Error('No sync data found in Gist')
-
-  const decrypted = await decrypt(encrypted, password)
-  const data = JSON.parse(decrypted)
-
-  if (data.applications) {
-    await db.applications.clear()
-    await db.applications.bulkAdd(data.applications)
+async function decryptSnapshot(encrypted: string, password: string) {
+  try {
+    return parseSnapshot(await decrypt(encrypted, password))
+  } catch {
+    throw new SyncError('invalidSnapshot')
   }
+}
 
-  if (data.customStages) {
-    await db.customStages.clear()
-    await db.customStages.bulkAdd(data.customStages)
+export async function pullFromGist(token: string, password: string, gistId: string): Promise<void> {
+  if (!token || !password || !isGistId(gistId)) throw new Error('Invalid sync settings')
+  const expectedLocal = JSON.stringify(await readLocalSnapshot())
+  const encrypted = await readGist(token, gistId)
+  const snapshot = await decryptSnapshot(encrypted, password)
+  try {
+    await replaceLocalSnapshot(snapshot, expectedLocal, gistId)
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Local data changed during restore') {
+      throw new SyncError('localChanged')
+    }
+    throw error
   }
-
-  await setSyncMeta({
-    lastSyncedAt: new Date().toISOString(),
-    gistId: storage.gistId,
-    token: storage.token,
-  })
 }

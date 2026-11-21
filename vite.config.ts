@@ -3,13 +3,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
+import { offlineBuild } from './offline-build.js'
 
 export default defineConfig({
   base: '/Apply-Log-plus/',
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), offlineBuild()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
+    },
+  },
+  build: {
+    rolldownOptions: {
+      output: { codeSplitting: { groups: [{ name: 'dexie', test: /node_modules[/\\]dexie[/\\]/ }] } },
     },
   },
   test: {

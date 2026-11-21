@@ -61,4 +61,11 @@ describe('exportToCsv', () => {
     expect(csv).toContain('Aplikowano')
     expect(csv).toContain('Odrzucono')
   })
+
+  it('keeps formula-like fields as text in a spreadsheet without modifying the JSON backup', () => {
+    const testApp = { ...apps[0], company: '  =label', role: '\ttext', notes: 'normal, "quoted"' }
+    expect(exportToCsv([testApp], 'en')).toContain(`"'  =label","'\ttext"`)
+    expect(exportToCsv([testApp], 'en')).toContain('"normal, ""quoted"""')
+    expect(JSON.parse(exportToJson([testApp], [])).applications[0]).toEqual(testApp)
+  })
 })

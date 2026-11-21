@@ -29,4 +29,13 @@ describe('encryption', () => {
 
     await expect(decrypt(encrypted, 'wrong password')).rejects.toThrow()
   })
+
+  it('round-trips a large Unicode payload without exceeding the argument limit', async () => {
+    const original = 'Żółć 📄 '.repeat(40_000)
+    await expect(decrypt(await encrypt(original, 'silne hasło'), 'silne hasło')).resolves.toBe(original)
+  })
+
+  it('rejects an incomplete envelope', async () => {
+    await expect(decrypt('AAAA', 'password')).rejects.toThrow('Invalid encrypted backup')
+  })
 })

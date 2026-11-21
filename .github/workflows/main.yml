@@ -1,6 +1,18 @@
 name: main
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      deploy_pages:
+        description: Deploy the verified build to GitHub Pages
+        type: boolean
+        default: false
+      publish_release:
+        description: Allow semantic-release to publish a GitHub release
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -20,10 +32,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm build
-      - run: pnpm test
+      - run: pnpm test:coverage
+      - run: pnpm audit --audit-level high
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e --reporter=line
 
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.deploy_pages
     needs: ci
     runs-on: ubuntu-latest
     permissions:
@@ -54,7 +69,7 @@ jobs:
         uses: actions/deploy-pages@v5
 
   release:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.publish_release
     needs: ci
     runs-on: ubuntu-latest
     permissions:

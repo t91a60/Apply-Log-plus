@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { db } from '@/db/database'
-import type { Application } from '@/db/schema'
+import { ApplicationSchema, type Application, type RecordId } from '@/db/schema'
 
 const APPLICATIONS_KEY = ['applications'] as const
 
@@ -8,31 +8,31 @@ async function fetchApplications(): Promise<Application[]> {
   return db.applications.orderBy('createdAt').reverse().toArray()
 }
 
-async function fetchApplication(id: string): Promise<Application | undefined> {
+async function fetchApplication(id: RecordId): Promise<Application | undefined> {
   return db.applications.get(id)
 }
 
-async function createApplication(data: Omit<Application, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: string; updatedAt?: string }) {
+async function createApplication(data: Omit<Application, 'id' | 'createdAt' | 'updatedAt'> & { id?: RecordId; createdAt?: string; updatedAt?: string }) {
   const now = new Date().toISOString()
-  const app: Omit<Application, 'id'> & { id?: string } = {
+  const app = ApplicationSchema.parse({
     ...data,
     createdAt: data.createdAt ?? now,
     updatedAt: data.updatedAt ?? now,
-  }
-  const id = await db.applications.add(app as Application)
-  return { ...app, id: String(id) } as Application
+  })
+  const id = await db.applications.add(app)
+  return { ...app, id }
 }
 
 async function updateApplication(data: Application) {
   const now = new Date().toISOString()
-  await db.applications.update(data.id!, {
-    ...data,
-    updatedAt: now,
-  })
-  return data
+  const app = ApplicationSchema.parse({ ...data, updatedAt: now })
+  if (app.id === undefined || await db.applications.update(app.id, app) !== 1) {
+    throw new Error('Application no longer exists')
+  }
+  return app
 }
 
-async function deleteApplication(id: string) {
+async function deleteApplication(id: RecordId) {
   await db.applications.delete(id)
   return id
 }
@@ -44,7 +44,7 @@ export function useApplications() {
   })
 }
 
-export function useApplication(id: string) {
+export function useApplication(id: RecordId) {
   return useQuery({
     queryKey: [...APPLICATIONS_KEY, id],
     queryFn: () => fetchApplication(id),

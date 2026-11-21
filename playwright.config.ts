@@ -8,12 +8,13 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173/Apply-Log-plus/',
+    baseURL: 'http://127.0.0.1:4173/Apply-Log-plus/',
+    launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE },
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:5173/Apply-Log-plus/',
+    command: 'pnpm build && pnpm preview --host 127.0.0.1 --port 4173 --strictPort',
+    url: 'http://127.0.0.1:4173/Apply-Log-plus/',
     reuseExistingServer: !process.env.CI,
     cwd: '.',
   },

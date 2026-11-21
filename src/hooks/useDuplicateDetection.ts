@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { Application } from '@/db/schema'
+import type { Application, RecordId } from '@/db/schema'
 
 function normalize(s: string): string {
   return s.toLowerCase().replace(/\s+/g, ' ').trim()
@@ -9,7 +9,7 @@ export function useDuplicateDetection(
   applications: Application[],
   company: string,
   role: string,
-  excludeId?: string,
+  excludeId?: RecordId,
 ) {
   return useMemo(() => {
     if (!company.trim() || !role.trim()) return null

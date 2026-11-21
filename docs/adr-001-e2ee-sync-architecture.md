@@ -1,73 +1,17 @@
-# ADR-001: End-to-End Encrypted Sync via GitHub Gist
+# ADR-001: Password-encrypted snapshot transfer via GitHub Gist
 
-**Status:** Accepted  
-**Date:** 2026-07-16  
-**Author:** t91a60
-
-## Context
-
-Apply Log+ is an offline-first job application tracker. Users need to sync data between devices (laptop, desktop, phone) without trusting a third-party server with their private job search data.
-
-Options considered:
-- **Custom sync server** — most secure, but requires infrastructure, maintenance, and a backend.
-- **Third-party sync service (Firebase, Supabase)** — convenient, but exposes data to the provider.
-- **Browser sync (Chrome profile, iCloud)** — platform-locked, no cross-browser support.
-- **File-based manual import/export** — works but friction is high.
+**Status:** Accepted; revised for the next release
 
 ## Decision
 
-Use **GitHub Gist** as a free, zero-infrastructure transport layer, combined with **client-side encryption** using AES-256-GCM + PBKDF2.
+Use local IndexedDB for applications and custom stages. A user may separately export a plaintext JSON backup or upload a password-encrypted snapshot to GitHub Gist. Neither workflow requires an application backend.
 
-### How it works
+## Rules
 
-1. User provides a GitHub Personal Access Token (scope: `gist`) and an encryption password.
-2. Data is serialised to JSON, **encrypted client-side** with AES-256-GCM using a key derived from the password via PBKDF2 (600 000 iterations, SHA-256).
-3. The encrypted blob is uploaded to a **private GitHub Gist** via the Gist API.
-4. On another device, the same token + password allow downloading and decrypting the blob.
+- **Credentials:** No pairing-code generation or decoding. The sync dialog retains the token and passphrase only in memory. Persist the validated Gist ID, not the secrets, and clear known legacy credential keys.
+- **Envelope:** Maintain compatibility with existing ciphertext: base64 of the 16-byte salt, 12-byte nonce and AES-256-GCM ciphertext with its 16-byte tag. Derive the key with PBKDF2-SHA-256 and 600,000 iterations. New snapshots require a passphrase of at least 16 characters; legacy snapshots remain readable with their original passphrase.
+- **Transport:** Use one unlisted Gist file through the [GitHub Gist REST API](https://docs.github.com/en/rest/gists/gists). Reject public Gists, missing files, and truncated content rather than following arbitrary URLs.
+- **Replacement:** Validate the full snapshot before any local write. Compare the current local state with the pre-download state and replace both stores in one transaction. Before an upload replaces an existing snapshot, verify that the old snapshot decrypts and validates with the supplied passphrase.
+- **Limits:** No automatic sync, conflict merge or protection from simultaneous writers publishing over one another. A Gist URL is not an access control; confidentiality relies on the passphrase.
 
-### Encryption details
-
-- **Key derivation:** PBKDF2 with 600 000 iterations, SHA-256, random 16-byte salt per encryption.
-- **Cipher:** AES-256-GCM (authenticated encryption — detects tampering).
-- **IV:** Random 12 bytes per encryption.
-- **Key storage:** The derived key is marked `extractable: false` and never leaves the `crypto.subtle` context — it cannot be exported even in the same browser session.
-- **Password:** Never persisted. Must be re-entered each session.
-
-### Pairing code
-
-For convenience, a **pairing code** bundles the GitHub token and Gist ID into a single base64 string. This is **plaintext** — the code is designed for direct device-to-device transfer (e.g., QR scan on the same LAN) and should never be sent over chat, email, or screenshot.
-
-## Consequences
-
-### Positive
-
-- **Zero infrastructure** — no backend, no database, no hosting costs.
-- **True E2EE** — GitHub never sees plaintext data; Gist only stores the encrypted blob.
-- **Free** — GitHub Gist is free with unlimited private gists.
-- **Portable** — works on any browser that supports `crypto.subtle` (all modern browsers).
-- **No account lock-in** — the password is the key; no "forgot password" flow (by design).
-
-### Negative
-
-- **Irrecoverable** — lose the password, lose the data. No backdoor.
-- **Token management** — users must create and manage a GitHub PAT (less technical users may find this challenging).
-- **Plaintext pairing code** — the pairing mechanism trades some security for convenience.
-- **Rate limits** — GitHub Gist API has rate limits (5 000 requests/hour authenticated).
-
-## Alternatives considered
-
-### Custom sync server (Node.js + PostgreSQL)
-Rejected due to operational overhead, cost, and requiring users to trust another server.
-
-### Firebase Firestore / Supabase
-Rejected because even with client-side encryption, the provider still sees metadata (document IDs, timestamps, collection structure). Also introduces vendor lock-in.
-
-### WebRTC / P2P
-Rejected due to complexity of signalling, NAT traversal, and requiring both devices online simultaneously.
-
-## Related
-
-- [SECURITY.md](../SECURITY.md)
-- `src/sync/encryption.ts` — implementation
-- `src/sync/syncManager.ts` — sync orchestration
-- `src/sync/githubGist.ts` — Gist API client
+The previous design traded security for credential pairing. That mechanism was removed; see the [security policy](../SECURITY.md) for credential rotation and older Gist revisions.

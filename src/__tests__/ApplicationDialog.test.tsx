@@ -3,11 +3,6 @@ import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { ApplicationDialog } from '@/components/applications/ApplicationDialog'
 import type { Application } from '@/db/schema'
 import { renderWithProviders } from './test-utils'
-import * as urlMetadata from '@/lib/urlMetadata'
-
-vi.mock('@/lib/urlMetadata', () => ({
-  fetchUrlMetadata: vi.fn(),
-}))
 
 const baseApp: Application = {
   id: '1', company: 'Google', role: 'Engineer', currentStage: 'Applied',
@@ -80,7 +75,7 @@ describe('ApplicationDialog', () => {
     expect(screen.getByText(/already exist in your list/)).toBeInTheDocument()
   })
 
-  it('calls onSubmit with application data', () => {
+  it('calls onSubmit with application data', async () => {
     renderWithProviders(
       <ApplicationDialog open={true} onOpenChange={onOpenChange} onSubmit={onSubmit} />
     )
@@ -96,9 +91,10 @@ describe('ApplicationDialog', () => {
     expect(submitted.company).toBe('TestCorp')
     expect(submitted.role).toBe('Developer')
     expect(submitted.currentStage).toBe('Applied')
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
   })
 
-  it('calls onSubmit with stage change when editing', () => {
+  it('preserves the timeline when editing without a stage change', async () => {
     renderWithProviders(
       <ApplicationDialog
         open={true}
@@ -114,27 +110,20 @@ describe('ApplicationDialog', () => {
     expect(onSubmit).toHaveBeenCalledTimes(1)
     const submitted = onSubmit.mock.calls[0][0]
     expect(submitted.timeline).toHaveLength(1)
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
   })
 
-  it('shows import error for failed URL import', async () => {
-    vi.mocked(urlMetadata.fetchUrlMetadata).mockResolvedValueOnce({
-      success: false,
-      data: null,
-    })
-
+  it('preserves form inputs and reports a write failure', async () => {
+    onSubmit.mockRejectedValueOnce(new Error('write failed'))
     renderWithProviders(
       <ApplicationDialog open={true} onOpenChange={onOpenChange} onSubmit={onSubmit} />
     )
-
-    const urlInput = screen.getByLabelText('Link to offer')
-    fireEvent.change(urlInput, { target: { value: 'https://example.com/job' } })
-
-    const importBtn = screen.getByText('Import')
-    fireEvent.click(importBtn)
-
-    await waitFor(() => {
-      expect(screen.getByText('Could not fetch preview from this URL')).toBeInTheDocument()
-    })
+    fireEvent.change(screen.getByLabelText('Company'), { target: { value: 'TestCorp' } })
+    fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'Developer' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not save')
+    expect(screen.getByLabelText('Company')).toHaveValue('TestCorp')
+    expect(onOpenChange).not.toHaveBeenCalled()
   })
 
   it('cancels and closes', () => {

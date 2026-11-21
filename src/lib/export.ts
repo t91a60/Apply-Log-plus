@@ -1,12 +1,5 @@
 import type { Application, CustomStage } from '@/db/schema'
-import { defaultStageLabels } from '@/db/schema'
-
-function stageLabel(stage: string, lang: 'en' | 'pl'): string {
-  if (stage in defaultStageLabels) {
-    return defaultStageLabels[stage as keyof typeof defaultStageLabels][lang]
-  }
-  return stage
-}
+import { getStageLabel } from '@/db/schema'
 
 export function exportToJson(applications: Application[], customStages: CustomStage[]): string {
   const data = {
@@ -25,7 +18,7 @@ export function exportToCsv(applications: Application[], lang: 'en' | 'pl'): str
   ].join(',')
 
   const rows = applications.map(app => {
-    const stage = stageLabel(app.currentStage, lang)
+    const stage = getStageLabel(app.currentStage, lang)
     return [
       escapeCsv(app.company),
       escapeCsv(app.role),
@@ -34,8 +27,8 @@ export function exportToCsv(applications: Application[], lang: 'en' | 'pl'): str
       escapeCsv(app.salary ?? ''),
       escapeCsv(app.url ?? ''),
       escapeCsv(app.notes ?? ''),
-      app.createdAt,
-      app.updatedAt,
+      escapeCsv(app.createdAt),
+      escapeCsv(app.updatedAt),
     ].join(',')
   })
 
@@ -43,10 +36,12 @@ export function exportToCsv(applications: Application[], lang: 'en' | 'pl'): str
 }
 
 function escapeCsv(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
+  const formulaLike = /^[\t\r\n]|^[\s\u200b-\u200d]*[=+\-@＝＋－＠]/u.test(value)
+  const literal = formulaLike ? `'${value}` : value
+  if (formulaLike || /[,"\r\n]/.test(literal)) {
+    return `"${literal.replace(/"/g, '""')}"`
   }
-  return value
+  return literal
 }
 
 export function downloadFile(content: string, filename: string, mimeType: string) {
