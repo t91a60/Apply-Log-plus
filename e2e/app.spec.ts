@@ -378,6 +378,23 @@ test.describe('Apply Log+', () => {
     }
   })
 
+  test('keeps the sync confirmation and controls in view at 200 percent text size', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 844 })
+    await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+    await page.getByRole('button', { name: 'Synchronizacja', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Gist ID', { exact: true }).fill('a'.repeat(32))
+    const confirmation = dialog.getByRole('checkbox')
+    await confirmation.check()
+    await expect(confirmation).toBeInViewport()
+    await expectNoOverflow(page)
+    expect(await dialog.locator('form').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+    const clear = dialog.getByRole('button', { name: 'Wyczyść konfigurację', exact: true })
+    await clear.scrollIntoViewIfNeeded()
+    await expect(clear).toBeInViewport()
+    await expect(dialog.getByRole('button', { name: 'Pobierz z Gista', exact: true })).toBeDisabled()
+  })
+
   test('has no runtime errors during local CRUD', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', error => errors.push(error.message))

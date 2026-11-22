@@ -17,6 +17,8 @@ Local data lives in the current browser profile and site origin. Clearing site d
 
 ## Transfer an encrypted snapshot via Gist
 
+Gist transfer is a preview feature in this release. Try it with fictional records first and keep an independent JSON backup.
+
 1. Export your local JSON backup first. Create a dedicated, expiring GitHub token with only Gist access. A fine-grained token needs the **Gists: write** user permission ([GitHub Gist API](https://docs.github.com/en/rest/gists/gists)).
 2. Open **Sync**, enter the token and a strong, unique passphrase of at least 16 characters, leave **Gist ID** blank, and choose **Push to Gist**. Keep the passphrase in a password manager.
 3. In the other browser, enter the Gist ID, a suitable token, and the same passphrase separately. Export any data you want to keep, confirm replacement, and choose **Pull from Gist**.

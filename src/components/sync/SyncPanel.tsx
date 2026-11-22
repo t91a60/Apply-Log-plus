@@ -72,11 +72,11 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={next => { if (!inFlight.current) onOpenChange(next) }}>
-      <DialogContent>
+      <DialogContent className="[overflow-wrap:anywhere]">
         <DialogHeader><DialogTitle>{t('sync.title')}</DialogTitle></DialogHeader>
         <p className="mb-4 text-sm text-muted-foreground">{t('sync.description')}</p>
         <form onSubmit={event => event.preventDefault()}>
-          <fieldset disabled={locked} className="space-y-4">
+          <fieldset disabled={locked} className="min-w-0 space-y-4">
             <div className="space-y-2">
               <label htmlFor="sync-token" className="text-sm font-medium">GitHub Personal Access Token</label>
               <Input id="sync-token" type="password" autoComplete="off" value={token} onChange={event => setToken(event.target.value)} />
@@ -95,7 +95,7 @@ export function SyncPanel({ open, onOpenChange, onSyncComplete }: Props) {
             </div>
             {id && !invalidId && (
               <label className="flex items-start gap-2 text-sm">
-                <input type="checkbox" className="mt-1" checked={confirm} onChange={event => setConfirm(event.target.checked)} />
+                <input type="checkbox" className="mt-1 shrink-0" checked={confirm} onChange={event => setConfirm(event.target.checked)} />
                 {t('sync.confirmOverwrite')}
               </label>
             )}

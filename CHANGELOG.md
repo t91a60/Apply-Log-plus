@@ -1,10 +1,13 @@
-# Unreleased
+# 1.1.0-rc.1 (2026-11-22)
 
 - Removed legacy credential pairing and browser persistence of sync credentials. Existing Gist IDs and IndexedDB records remain in place.
 - Validated encrypted snapshots before replacement, made restores transactional, and rejected concurrent local edits during a restore.
 - Added JSON recovery, spreadsheet-safe CSV output, a language selector, and offline reopening for successful production visits.
 - Removed proxy-based offer previews. Pasted offer links are stored without a background request.
+- Fixed horizontal overflow in the edit and sync dialogs at 200% text size, including long custom stage names.
 - Updated dependencies and added release gates for lint, coverage, dependency audit and production browser tests. Pages and release publication are opt-in.
+
+Gist transfer is a preview feature. Tests exercise a simulated Gist API; use a separate JSON backup and test with fictional records before relying on Gist. Transfers replace data rather than merging it.
 
 # 1.0.0 (2026-07-16)
 
