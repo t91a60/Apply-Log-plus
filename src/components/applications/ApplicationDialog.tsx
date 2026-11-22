@@ -110,7 +110,7 @@ export function ApplicationDialog({ open, onOpenChange, onSubmit, initialData, c
           <DialogTitle>{isEditing ? t('application.edit') : t('application.add')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={event => void handleSubmit(event)}>
-          <fieldset disabled={saving} className="space-y-4">
+          <fieldset disabled={saving} className="min-w-0 space-y-4 [overflow-wrap:anywhere]">
           {duplicate && !isEditing && (
             <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
               {t('application.duplicateWarning', { company: duplicate.company, role: duplicate.role })}
