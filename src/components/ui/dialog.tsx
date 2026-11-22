@@ -121,7 +121,7 @@ function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingEl
   return (
     <h2
       id={titleId}
-      className={cn("text-lg font-semibold leading-snug tracking-tight", className)}
+      className={cn("text-lg font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]", className)}
       {...props}
     />
   )

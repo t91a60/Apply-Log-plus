@@ -17,6 +17,8 @@ Dane lokalne należą do bieżącego profilu przeglądarki i adresu aplikacji. W
 
 ## Przenoszenie zaszyfrowanej migawki przez Gist
 
+Przenoszenie przez Gist jest w tym wydaniu funkcją testową. Zacznij od fikcyjnych danych i przechowuj niezależną kopię JSON.
+
 1. Najpierw wyeksportuj lokalny JSON. Utwórz dedykowany, wygasający token GitHub wyłącznie do Gistów. Dla tokena fine-grained jest to uprawnienie użytkownika **Gists: write** ([dokumentacja API Gist](https://docs.github.com/en/rest/gists/gists)).
 2. Otwórz **Synchronizacja**, wpisz token i mocne, unikalne hasło o długości co najmniej 16 znaków. Zostaw puste **Gist ID** i wybierz **Wyślij do Gista**. Zachowaj hasło w menedżerze haseł.
 3. Na innym urządzeniu wpisz osobno ID Gista, odpowiedni token i to samo hasło. Jeśli są tam lokalne dane, zrób ich kopię. Potwierdź zastąpienie i wybierz **Pobierz z Gista**.

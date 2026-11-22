@@ -30,14 +30,14 @@ export function Timeline({ timeline, lang }: Props) {
       <div className="relative space-y-0">
         {sorted.map((entry, i) => (
           <div key={i} className="relative flex gap-4 pb-4 last:pb-0">
-            <div className="flex flex-col items-center">
+            <div className="flex shrink-0 flex-col items-center">
               <div className="w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-background" />
               {i < sorted.length - 1 && (
                 <div className="w-px flex-1 bg-border" />
               )}
             </div>
-            <div className="flex-1 pt-0.5">
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1 pt-0.5 [overflow-wrap:anywhere]">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <span className="text-sm font-medium">{getStageLabel(entry.stage, lang)}</span>
                 <span className="text-xs text-muted-foreground">{formatDate(entry.date)}</span>
               </div>
