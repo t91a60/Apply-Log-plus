@@ -1,8 +1,11 @@
 # Apply Log+
 
-[Polski](README.pl.md) · [GitHub Pages](https://t91a60.github.io/Apply-Log-plus/) · [Security](SECURITY.md)
+[Polski](README.pl.md) · [Open the hosted app](https://t91a60.github.io/Apply-Log-plus/) · [Releases](https://github.com/t91a60/Apply-Log-plus/releases) · [Security](SECURITY.md)
 
 Apply Log+ keeps a record of your job applications in your browser. Track where you applied, see how each application progressed, and keep a copy you can take to another browser.
+
+> [!NOTE]
+> **Hosted app or release candidate?** The hosted app reflects the last Pages deployment. To try `v1.1.0-rc.1`, use the [release notes](https://github.com/t91a60/Apply-Log-plus/releases/tag/v1.1.0-rc.1), [web bundle ZIP](https://github.com/t91a60/Apply-Log-plus/releases/download/v1.1.0-rc.1/apply-log-plus-v1.1.0-rc.1-web.zip), and [SHA-256 checksum](https://github.com/t91a60/Apply-Log-plus/releases/download/v1.1.0-rc.1/SHA256SUMS.txt). Serve the extracted bundle over HTTP at `/Apply-Log-plus/`; do not open `index.html` from disk.
 
 - **Applications:** Track companies, roles, notes, links and stage history. Search or filter the list, and add your own stages.
 - **Local storage:** Routine tracking needs no account, token, or backend. The production app can reopen offline after an online visit has finished caching its files.

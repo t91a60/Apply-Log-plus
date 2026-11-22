@@ -1,8 +1,11 @@
 # Apply Log+
 
-[English](README.md) · [GitHub Pages](https://t91a60.github.io/Apply-Log-plus/) · [Bezpieczeństwo](SECURITY.md)
+[English](README.md) · [Otwórz aplikację](https://t91a60.github.io/Apply-Log-plus/) · [Wydania](https://github.com/t91a60/Apply-Log-plus/releases) · [Bezpieczeństwo](SECURITY.md)
 
 Apply Log+ to dziennik rekrutacji działający w przeglądarce. Zapisuj firmy, stanowiska, linki i notatki, sprawdzaj historię etapów, a w razie zmiany przeglądarki zabierz dane ze sobą.
+
+> [!NOTE]
+> **Wersja online czy wydanie testowe?** Aplikacja online pokazuje stan z ostatniego wdrożenia Pages. Aby przetestować `v1.1.0-rc.1`, zobacz [informacje o wydaniu](https://github.com/t91a60/Apply-Log-plus/releases/tag/v1.1.0-rc.1), [paczkę ZIP](https://github.com/t91a60/Apply-Log-plus/releases/download/v1.1.0-rc.1/apply-log-plus-v1.1.0-rc.1-web.zip) i [sumę SHA-256](https://github.com/t91a60/Apply-Log-plus/releases/download/v1.1.0-rc.1/SHA256SUMS.txt). Udostępnij rozpakowaną paczkę przez HTTP pod `/Apply-Log-plus/`; nie otwieraj `index.html` bezpośrednio z dysku.
 
 - **Rekrutacje:** Dodawaj i edytuj zgłoszenia oraz własne etapy. Wyszukuj oferty, filtruj według etapu i sprawdzaj statystyki.
 - **Tryb lokalny:** Do prowadzenia dziennika nie potrzebujesz konta ani tokena. Wydanie produkcyjne otwiera się offline po pierwszej wizycie online, jeśli przeglądarka zdąży pobrać pliki.
